@@ -338,7 +338,19 @@ const PYTHON_NODE_TYPES = ['Chunk', 'StatAssignment', 'StatFunctionCall', 'StatD
 const NAMED_FIELDS = { Chunk:['stats'], StatAssignment:['varlist','assignop','explist'], StatFunctionCall:['functioncall'], StatDo:['block'], StatWhile:['exp','block'], StatRepeat:['block','exp'], StatIf:['exp_block_pairs'], StatForStep:['name','exp_init','exp_end','exp_step','block'], StatForIn:['namelist','explist','block'], StatFunction:['funcname','funcbody'], StatLocalFunction:['funcname','funcbody'], StatLocalAssignment:['namelist','explist'], StatGoto:['label'], StatLabel:['label'], StatReturn:['explist'], FunctionName:['namepath','methodname'], FunctionArgs:['explist'], VarList:['vars'], VarName:['name'], VarIndex:['exp_prefix','exp_index'], VarAttribute:['exp_prefix','attr_name'], NameList:['names'], ExpList:['exps'], ExpValue:['value'], VarargDots:[], ExpBinOp:['exp1','binop','exp2'], ExpUnOp:['unop','exp'], FunctionCall:['exp_prefix','args'], FunctionCallMethod:['exp_prefix','methodname','args'], Function:['funcbody'], FunctionBody:['parlist','dots','block'], TableConstructor:['fields'], FieldExp:['exp'], FieldExpKey:['key_exp','exp'], FieldNamedKey:['key_name','exp'] };
 const exportsMap = { Node, LuaNode: Node, LuaAstError, parseLua, parseLuaAst: parseLua, AstParser };
 for (const name of PYTHON_NODE_TYPES) {
-  const Named = class extends Node { constructor(...args) { const names = NAMED_FIELDS[name] || []; const fields = {}; names.forEach((field, i) => { fields[field] = args[i]; }); super(name, fields, null, null, ''); } };
+  const Named = class extends Node {
+    constructor(...args) {
+      const names = NAMED_FIELDS[name] || [];
+      const options = args.length === names.length + 1 && args.at(-1) && typeof args.at(-1) === 'object' && !Array.isArray(args.at(-1)) && ('start' in args.at(-1) || 'end' in args.at(-1)) ? args.pop() : {};
+      if (args.length !== names.length) throw new TypeError(`Initializer for ${name} requires ${names.length} fields, saw ${args.length}`);
+      const fields = {};
+      names.forEach((field, i) => { fields[field] = args[i]; });
+      super(name, fields, null, null, '');
+      this._start_token_pos = options.start ?? null;
+      this._end_token_pos = options.end ?? null;
+      for (const [key, value] of Object.entries(options)) if (key !== 'start' && key !== 'end') this[key] = value;
+    }
+  };
   Object.defineProperty(Named, 'name', { value: name });
   NODE_CLASS_BY_TYPE[name] = Named; exportsMap[name] = Named;
 }

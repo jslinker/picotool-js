@@ -2,6 +2,16 @@
 
 const assert = require('node:assert/strict');
 const { parseLua, Node } = require('../src/lua-ast-model');
+const { Chunk, StatAssignment, VarargDots } = require('../src/lua-ast-model');
+
+assert.throws(() => new Chunk(), /Initializer for Chunk requires 1 fields, saw 0/);
+assert.throws(() => new StatAssignment([], '='), /Initializer for StatAssignment requires 3 fields, saw 2/);
+const constructed = new Chunk([], { start: 4, end: 9, note: 'test' });
+assert.deepEqual(constructed.stats, []);
+assert.equal(constructed.start_pos, 4);
+assert.equal(constructed.end_pos, 9);
+assert.equal(constructed.note, 'test');
+assert.equal(new VarargDots({ start: 2, end: 3 }).start_pos, 2);
 
 const tree = parseLua('local x = 1\nif x > 0 then\n  print("yes")\nend\n');
 assert.equal(tree.type, 'Chunk');
