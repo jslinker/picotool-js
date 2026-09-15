@@ -10,6 +10,9 @@ const { listLua, listTokens } = require('./listing');
 const { findLua } = require('./lua-find');
 const { readP8Png, writeP8Png } = require('./png-transport');
 const { writeP8 } = require('./p8writer');
+const { buildP8 } = require('./build');
+const fileApi = require('./file-api');
+const { Game } = require('./game');
 
 function parseArgs(argv = []) {
   const args = Array.from(argv);
@@ -24,7 +27,7 @@ function parseArgs(argv = []) {
       throw new Error(`unknown option: ${arg}`);
     } else if (result.command === null) {
       result.command = arg;
-      if (!['stats', 'listlua', 'listtokens', 'listrawlua', 'writep8', 'luamin', 'luafmt', 'luafind'].includes(arg)) throw new Error(`unknown command: ${arg}`);
+      if (!['stats', 'listlua', 'listtokens', 'listrawlua', 'writep8', 'luamin', 'luafmt', 'luafind', 'build'].includes(arg)) throw new Error(`unknown command: ${arg}`);
     } else if (arg === '--csv' && result.command === 'stats') {
       result.csv = true;
     } else if (arg === '--show-line-numbers' && result.command === 'listlua') {
@@ -42,6 +45,25 @@ function parseArgs(argv = []) {
       result.keepAllNames = true;
     } else if (arg === '--listfiles' && result.command === 'luafind') {
       result.listFiles = true;
+    } else if (result.command === 'build' && /^--(?:empty-)?(?:lua|gfx|gff|map|sfx|music)$/.test(arg)) {
+      const match = arg.match(/^--(empty-)?(lua|gfx|gff|map|sfx|music)$/);
+      const key = match[1] ? `empty_${match[2]}` : match[2];
+      result[key] = match[1] ? true : args.shift();
+      if (!match[1] && result[key] === undefined) throw new Error(`${arg} requires a filename`);
+    } else if (result.command === 'build' && arg === '--lua-path') {
+      result.luaPath = args.shift();
+      if (result.luaPath === undefined) throw new Error('--lua-path requires a value');
+    } else if (result.command === 'build' && arg === '--optimize-tokens') {
+      result.optimizeTokens = true;
+    } else if (result.command === 'build' && arg === '--lua-format') {
+      result.luaFormat = true;
+    } else if (result.command === 'build' && arg === '--lua-minify') {
+      result.luaMinify = true;
+    } else if (result.command === 'build' && arg === '--keep-all-names') {
+      result.keepAllNames = true;
+    } else if (result.command === 'build' && arg === '--keep-names-from-file') {
+      result.keepNamesFromFile = args.shift();
+      if (result.keepNamesFromFile === undefined) throw new Error('--keep-names-from-file requires a filename');
     } else if (arg.startsWith('-')) {
       throw new Error(`unknown option: ${arg}`);
     } else {
@@ -200,6 +222,105 @@ function runWrite(args, io = {}) {
   return failed ? 1 : 0;
 }
 
+const BUILD_DOMAINS = ['lua', 'gfx', 'gff', 'map', 'sfx', 'music'];
+
+// buildP8's require bundler accepts an in-memory file map. Mirror the Python
+// tool's filesystem lookup by making Lua files beside the entry file visible
+// under their absolute, leading-slash-free paths.
+function luaFilesFor(filename) {
+  const root = path.dirname(path.resolve(filename));
+  const files = {};
+  function visit(directory) {
+    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+      const full = path.join(directory, entry.name);
+      if (entry.isDirectory()) visit(full);
+      else if (entry.isFile() && entry.name.endsWith('.lua')) {
+        files[full.replace(/^[/\\]/, '')] = fs.readFileSync(full);
+      }
+    }
+  }
+  visit(root);
+  return files;
+}
+
+function buildOptions(args, sources, existing) {
+  const empty = BUILD_DOMAINS.filter((domain) => args[`empty_${domain}`]);
+  return {
+    existing, sources, empty,
+    luaMinify: args.luaMinify, luaFormat: args.luaFormat,
+    luaPath: args.luaPath, optimizeTokens: args.optimizeTokens,
+    indentwidth: args.indentwidth || 2,
+  };
+}
+
+function runBuild(args, io = {}) {
+  const write = io.write || ((text) => process.stdout.write(text));
+  const error = io.error || ((text) => process.stderr.write(text));
+  const read = io.readFile || fs.readFileSync;
+  const output = args.filename[0];
+  if (!output || (!output.endsWith('.p8') && !output.endsWith('.p8.png'))) {
+    error('Output filename must end with .p8 or .p8.png.\n'); return 1;
+  }
+  try {
+    if (output.endsWith('.p8.png')) throw new Error('build .p8.png requires mainAsync');
+    const existing = fs.existsSync(output) ? read(output) : undefined;
+    const sources = {};
+    for (const domain of BUILD_DOMAINS) if (args[domain] !== undefined) {
+      const filename = args[domain];
+      if (!fs.existsSync(filename)) throw new Error(`File "${filename}" given for --${domain} arg does not exist.`);
+      if (domain === 'lua' && filename.endsWith('.lua')) sources.lua = {
+        format: 'lua', data: read(filename, 'utf8'), filename,
+        files: luaFilesFor(filename), luaPath: args.luaPath,
+      };
+      else if (filename.endsWith('.p8')) sources[domain] = { format: 'p8', data: read(filename) };
+      else throw new Error(`Unsupported file type for --${domain} arg.`);
+    }
+    const bytes = buildP8(buildOptions(args, sources, existing));
+    (io.writeFile || fs.writeFileSync)(output, bytes);
+    if (!args.quiet) write(`${output}\n`);
+    return 0;
+  } catch (exception) { error(`${exception.message}\n`); return 1; }
+}
+
+async function asyncBuild(args, io = {}) {
+  const write = io.write || ((text) => process.stdout.write(text));
+  const error = io.error || ((text) => process.stderr.write(text));
+  const read = io.readFile || fs.promises.readFile;
+  const writeFile = io.writeFile || fs.promises.writeFile;
+  const output = args.filename[0];
+  if (!output || (!output.endsWith('.p8') && !output.endsWith('.p8.png'))) {
+    error('Output filename must end with .p8 or .p8.png.\n'); return 1;
+  }
+  try {
+    let existing;
+    if (fs.existsSync(output)) {
+      existing = output.endsWith('.p8.png')
+        ? writeP8(Game.fromCartridge((await fileApi.fromFile(output)), output).toCartridge('p8'))
+        : await read(output);
+    }
+    const sources = {};
+    for (const domain of BUILD_DOMAINS) if (args[domain] !== undefined) {
+      const filename = args[domain];
+      let input;
+      try { input = await read(filename); } catch { throw new Error(`File "${filename}" given for --${domain} arg does not exist.`); }
+      if (domain === 'lua' && filename.endsWith('.lua')) sources.lua = {
+        format: 'lua', data: Buffer.from(input).toString('utf8'), filename,
+        files: luaFilesFor(filename), luaPath: args.luaPath,
+      };
+      else if (filename.endsWith('.p8')) sources[domain] = { format: 'p8', data: input };
+      else if (filename.endsWith('.p8.png')) sources[domain] = {
+        format: 'p8', data: writeP8(Game.fromCartridge((await fileApi.fromFile(filename)), filename).toCartridge('p8')),
+      };
+      else throw new Error(`Unsupported file type for --${domain} arg.`);
+    }
+    const bytes = buildP8(buildOptions(args, sources, existing));
+    if (output.endsWith('.p8')) await writeFile(output, bytes);
+    else await fileApi.toFile(require('./picotool').parseP8(bytes), output);
+    if (!args.quiet) write(`${output}\n`);
+    return 0;
+  } catch (exception) { error(`${exception.message}\n`); return 1; }
+}
+
 async function asyncStatsRows(filenames, readFile = fs.promises.readFile) {
   const rows = [], errors = [];
   for (const filename of filenames) {
@@ -323,6 +444,7 @@ async function mainAsync(argv = process.argv.slice(2), io = {}) {
     if (['listlua', 'listtokens'].includes(args.command) && args.filename.some((filename) => filename.endsWith('.p8.png'))) return asyncListing(args, io);
     if (['writep8', 'luamin', 'luafmt'].includes(args.command) && args.filename.some((filename) => filename.endsWith('.p8.png'))) return asyncWrite(args, io);
     if (args.command === 'luafind' && args.filename.slice(1).some((filename) => filename.endsWith('.p8.png'))) return asyncLuaFind(args, io);
+    if (args.command === 'build') return asyncBuild(args, io);
     if (args.command !== 'stats') return main(argv, io);
     const write = io.write || ((text) => process.stdout.write(text));
     const error = io.error || ((text) => process.stderr.write(text));
@@ -343,6 +465,7 @@ function main(argv = process.argv.slice(2), io = {}) {
     if (args.command === 'stats') return runStats(args, io);
     if (['listlua', 'listtokens', 'listrawlua'].includes(args.command)) return runListing(args, io);
     if (args.command === 'luafind') return runLuaFind(args, io);
+    if (args.command === 'build') return runBuild(args, io);
     if (['writep8', 'luamin', 'luafmt'].includes(args.command)) return runWrite(args, io);
     return 1;
   } catch (error) {
@@ -351,4 +474,4 @@ function main(argv = process.argv.slice(2), io = {}) {
   }
 }
 
-module.exports = Object.freeze({ asyncStatsRows, friendly, formatStats, main, mainAsync, parseArgs, runListing, runStats, statsRows });
+module.exports = Object.freeze({ asyncBuild, asyncStatsRows, buildOptions, friendly, formatStats, main, mainAsync, parseArgs, runBuild, runListing, runStats, statsRows });

@@ -83,8 +83,49 @@ try {
   }), 0);
 } finally { rmSync(testDirectory, { recursive: true, force: true }); }
 
+const buildDirectory = mkdtempSync(join(tmpdir(), 'picotool-build-test-'));
+try {
+  const luaFile = join(buildDirectory, 'main.lua');
+  const moduleFile = join(buildDirectory, 'module.lua');
+  const outputFile = join(buildDirectory, 'built.p8');
+  require('fs').writeFileSync(luaFile, '-- Built\nrequire("module")\nprint("ok")\n');
+  require('fs').writeFileSync(moduleFile, 'module_value=42\n');
+  let buildOutput = '';
+  assert.strictEqual(main(['build', '--lua', luaFile, outputFile], {
+    write: (text) => { buildOutput += text; }, error: (text) => { throw new Error(text); },
+  }), 0);
+  assert.match(buildOutput, /built\.p8/);
+  const built = require('fs').readFileSync(outputFile, 'utf8');
+  assert.match(built, /print\("ok"\)/);
+  assert.match(built, /package\._c\["module"\]/);
+  assert.deepStrictEqual(parseArgs(['build', '--empty-gfx', outputFile]).empty_gfx, true);
+  let buildError = '';
+  assert.strictEqual(main(['build', '--lua', luaFile, '--empty-lua', outputFile], {
+    write: () => {}, error: (text) => { buildError += text; },
+  }), 1);
+  assert.match(buildError, /Cannot specify --lua and --empty-lua/);
+} finally { rmSync(buildDirectory, { recursive: true, force: true }); }
+
 const png = resolve(__dirname, '../../../vendor/picotool/tests/testdata/test_cart.p8.png');
 const pngOutput = png.replace(/\.p8\.png$/, '_fmt.p8.png');
+const pngBuildDirectory = mkdtempSync(join(tmpdir(), 'picotool-build-png-test-'));
+const pngBuildLua = join(pngBuildDirectory, 'main.lua');
+const pngBuildModule = join(pngBuildDirectory, 'module.lua');
+const pngBuildOutput = join(pngBuildDirectory, 'built.p8.png');
+require('fs').writeFileSync(pngBuildLua, 'require("module")\nprint("png")\n');
+require('fs').writeFileSync(pngBuildModule, 'png_module=true\n');
+mainAsync(['build', '--lua', pngBuildLua, pngBuildOutput], {
+  write: () => {}, error: (text) => { throw new Error(text); },
+}).then((status) => {
+  assert.strictEqual(status, 0);
+  return mainAsync(['listlua', pngBuildOutput], {
+    write: (text) => { assert.match(text, /package\._c\["module"\]/); },
+    error: (text) => { throw new Error(text); },
+  });
+}).then((status) => {
+  assert.strictEqual(status, 0);
+  rmSync(pngBuildDirectory, { recursive: true, force: true });
+}).catch((error) => { throw error; });
 mainAsync(['stats', png], {
   write: (text) => { out += text; }, error: (text) => { err += text; },
 }).then((status) => {
