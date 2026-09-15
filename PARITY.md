@@ -21,7 +21,7 @@ The supported JavaScript behavior is checked by running Node and Python over the
 
 - Decide whether `luafind` should reproduce its Python 3 string-pattern/byte-line `TypeError` or implement the intended search behavior.
 - `listrawlua` calls the missing `Game.get_raw_data_from_p8_file()` API in the vendored revision.
-- `.rom` reading and writing only raise `NotImplementedError` in Python.
+- `.rom` is recognized by filename and raises `NotImplementedError` on reading and writing, as the upstream formatter does; usable ROM transport remains unavailable upstream.
 - `--optimize-tokens` and property-name-preserving minification raise `NotImplementedError` in Python.
 
 ### PNG edge cases and transport

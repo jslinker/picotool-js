@@ -17,16 +17,26 @@ class UnrecognizedFileType extends base.P8Error {
 function formatForFilename(filename) {
   if (filename.endsWith('.p8.png')) return 'p8.png';
   if (filename.endsWith('.p8')) return 'p8';
+  if (filename.endsWith('.rom')) return 'rom';
   throw new UnrecognizedFileType(filename);
+}
+
+function unsupportedRom() {
+  const error = new Error('');
+  error.name = 'NotImplementedError';
+  throw error;
 }
 
 async function fromBytes(input, filename) {
   const format = formatForFilename(filename);
+  if (format === 'rom') unsupportedRom();
   if (format === 'p8') return base.parseP8(input);
   return (await readP8Png(input)).cartridge;
 }
 
 async function fromFile(filename) {
+  const format = formatForFilename(filename);
+  if (format === 'rom') unsupportedRom();
   return fromBytes(await readFile(filename), filename);
 }
 
@@ -61,6 +71,7 @@ async function labelBytesFor(filename, options) {
 
 async function toBytes(cartridge, filename, options = {}) {
   const format = formatForFilename(filename);
+  if (format === 'rom') unsupportedRom();
   if (typeof cartridge?.toCartridge === 'function') cartridge = cartridge.toCartridge(format);
   if (format === 'p8') return writeP8(cartridge?.format === 'p8' ? cartridge : p8FromCartridge(cartridge), options);
   const labelPng = await labelBytesFor(filename, options);

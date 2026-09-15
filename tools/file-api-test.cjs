@@ -34,6 +34,13 @@ async function main() {
     assert.equal((await picotool.fromFile(textPath)).sections.lua.join(''), 'print(42)\n');
     assert.throws(() => picotool.formatForFilename('game.txt'), (error) =>
       error instanceof picotool.UnrecognizedFileType && error.filename === 'game.txt');
+    assert.equal(picotool.formatForFilename('game.rom'), 'rom');
+    await assert.rejects(picotool.fromBytes(new Uint8Array(), 'game.rom'),
+      (error) => error.name === 'NotImplementedError');
+    await assert.rejects(picotool.toBytes(picotool.parseP8(source), 'game.rom'),
+      (error) => error.name === 'NotImplementedError');
+    await assert.rejects(picotool.fromFile(join(directory, 'missing.txt')),
+      (error) => error instanceof picotool.UnrecognizedFileType);
 
     const game = picotool.Game.make_empty_game('empty.p8', 33);
     assert.equal(game.filename, 'empty.p8');

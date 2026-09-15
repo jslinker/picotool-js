@@ -75,7 +75,7 @@ The complete list of remaining and intentionally excluded behavior is maintained
 - Python parser AST classes, walker subclasses, and AST debug printing. The Node API validates grammar and reproduces the observable writer and `require()` outputs used by the extension; it does not expose Python-shaped AST objects.
 - CLI-only orchestration and presentation commands such as `luafind`, `printast`, overwrite prompting, and CSV formatting. `listLua()` and `listTokens()` cover the working Lua and token listing output.
 - Raw Lua listing, which calls the missing `Game.get_raw_data_from_p8_file` API in this vendored revision.
-- `.rom` input and output. Python's `ROMFormatter` methods only raise `NotImplementedError`.
+- Usable `.rom` input and output. Both Python and JavaScript recognize the extension but raise `NotImplementedError` because Python's `ROMFormatter` has no implementation.
 - The demo script and Python-specific utility globals, logging streams, and exception inheritance details.
 - `--optimize-tokens` and property-name-preserving minification, which are also `NotImplementedError` in Python.
 

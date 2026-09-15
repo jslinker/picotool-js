@@ -81,7 +81,7 @@ export function cartridgeCompressedSize(cartridge: any): number;
 export class UnrecognizedFileType extends P8Error {
   readonly filename: string;
 }
-export function formatForFilename(filename: string): 'p8' | 'p8.png';
+export function formatForFilename(filename: string): 'p8' | 'p8.png' | 'rom';
 export function fromBytes(input: Uint8Array | ArrayBuffer, filename: string): Promise<ParsedP8 | any>;
 export function fromFile(filename: string): Promise<ParsedP8 | any>;
 export interface CartridgeFileOptions extends P8WriterOptions {
