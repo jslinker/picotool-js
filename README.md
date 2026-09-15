@@ -84,6 +84,7 @@ The implemented compatibility scope is the structural parser and Node-based echo
 The complete list of remaining and intentionally excluded behavior is maintained in [PARITY.md](PARITY.md). The main exclusions are:
 
 - Python's `pypng` file transport itself. JavaScript uses `fast-png`; parity tests compare the decoded cartridge and exact embedded RGBA bytes with Python's PICO-8 pixel codec, then exercise JavaScript PNG encode/decode round trips across all upstream fixtures.
+- Malformed PNG labels with fewer than four 8-bit color planes are rejected, since Python's cartridge codec assumes four planes and may fail or mix channels.
 - Python parser AST classes, walker subclasses, and AST debug printing. The Node API validates grammar and reproduces the observable writer and `require()` outputs used by the extension; it does not expose Python-shaped AST objects.
 - CLI-only orchestration and presentation commands such as `luafind`, `printast`, overwrite prompting, and CSV formatting. `listLua()` and `listTokens()` cover the working Lua and token listing output.
 - Raw Lua listing, which calls the missing `Game.get_raw_data_from_p8_file` API in this vendored revision.

@@ -27,8 +27,8 @@ The supported JavaScript behavior is checked by running Node and Python over the
 ### PNG edge cases and transport
 
 - Direct `pypng` reader/writer implementation details are excluded. JavaScript uses `fast-png`; parity covers decoded cartridges, exact embedded RGBA bytes, visible-label preservation, and PNG round trips.
-- Determine whether non-RGBA, non-8-bit, or interlaced labels should be accepted. Python's PICO-8 codec assumes four color planes.
-- Decide whether to reproduce Python's uncompressed-code `TypeError` and oversized-code byte-array expansion. JavaScript currently writes useful fixed-size PICO-8 data instead of reproducing corrupt or failing output.
+- Non-RGBA or non-8-bit labels are rejected deliberately: Python's PICO-8 pixel codec assumes four 8-bit color planes and can fail or mix channels otherwise. Interlaced labels still need explicit transport verification.
+- Python's uncompressed-code `TypeError` and oversized-code byte-array expansion are intentionally not reproduced. The JavaScript codec writes useful fixed-size PICO-8 data, but still needs explicit oversize validation to avoid silent truncation.
 
 ### Python-only infrastructure
 
