@@ -1,0 +1,21 @@
+{
+  "name": "@pico8-studio/picotool",
+  "version": "0.1.0",
+  "description": "Portable JavaScript compatibility port of picotool for Node and browsers",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "browser": "src/browser.js",
+  "files": [
+    "src/",
+    "LICENSE",
+    "README.md"
+  ],
+  "license": "MIT",
+  "scripts": {
+    "test": "node tools/check-parity.cjs",
+    "test:parity": "node tools/check-parity.cjs"
+  },
+  "dependencies": {
+    "fast-png": "^8.0.0"
+  }
+}

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>picotool JavaScript parity tests</title>
+  <style>
+    :root { color-scheme: dark; font: 15px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    body { margin: 0; background: #0d1117; color: #e6edf3; }
+    main { max-width: 1040px; margin: 0 auto; padding: 32px 20px 64px; }
+    h1 { font: 600 26px/1.2 system-ui, sans-serif; margin: 0 0 8px; }
+    p { color: #9da7b3; max-width: 78ch; }
+    .panel { border: 1px solid #30363d; border-radius: 8px; background: #161b22; padding: 16px; margin-top: 16px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    button, input::file-selector-button { border: 1px solid #8b949e; border-radius: 5px; padding: 7px 11px; background: #21262d; color: inherit; cursor: pointer; }
+    button:hover, input::file-selector-button:hover { background: #30363d; }
+    label { display: block; margin-bottom: 6px; color: #c9d1d9; }
+    textarea { box-sizing: border-box; width: 100%; min-height: 120px; resize: vertical; background: #0d1117; color: inherit; border: 1px solid #30363d; padding: 10px; }
+    pre { overflow: auto; min-height: 220px; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+    body[data-status="passed"] #output { border-left: 4px solid #3fb950; padding-left: 12px; }
+    body[data-status="failed"] #output { border-left: 4px solid #f85149; padding-left: 12px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>picotool JavaScript parity tests</h1>
+    <p>This page runs directly from disk. It automatically tests all bundled upstream cartridge fixtures and compares them with a frozen report from the Python implementation.</p>
+    <section class="panel">
+      <label for="fixtures">The 11 known upstream fixtures are bundled. Optionally add new or replacement cartridges.</label>
+      <div class="controls">
+        <input id="fixtures" type="file" accept=".p8,.png,image/png,text/plain" multiple>
+        <button id="run" type="button">Run tests</button>
+        <button id="copy" type="button">Copy output</button>
+      </div>
+    </section>
+    <section class="panel">
+      <label for="oracle">Optional: compare with a newly generated Python oracle report</label>
+      <textarea id="oracle" spellcheck="false" placeholder="python3 packages/picotool-js/tools/python_oracle.py ..."></textarea>
+      <div class="controls">
+        <input id="oracleFile" type="file" accept=".json,application/json,text/plain">
+        <button id="compare" type="button">Compare with Python</button>
+      </div>
+    </section>
+    <section class="panel"><pre id="output" aria-live="polite">Starting…</pre></section>
+  </main>
+  <script src="../src/p8scii-map.js"></script>
+  <script src="../src/picotool.js"></script>
+  <script src="../src/sections.js"></script>
+  <script src="../src/p8png.js"></script>
+  <script src="png-browser.js"></script>
+  <script src="fixture-data.js"></script>
+  <script src="report-utils.js"></script>
+  <script src="test-runner.js"></script>
+  <script src="tests.js"></script>
+  <script src="domain-tests.js"></script>
+  <script src="png-tests.js"></script>
+  <script src="fixture-tests.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

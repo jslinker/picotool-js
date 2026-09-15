@@ -1,0 +1,181 @@
+# picotool-js development guide
+
+The parity harness needs a Python picotool checkout only as a development oracle. Place it at `vendor/picotool` inside this repository or set `PICOTOOL_ROOT` to an existing checkout. `PICOTOOL_FIXTURES_ROOT` can override the fixture directory independently.
+
+Run the automated Python/JavaScript differential check from the repository root:
+
+```sh
+npm run test:parity --workspace @pico8-studio/picotool
+```
+
+It runs the JavaScript unit suite, asks the vendored Python implementation for fresh oracle results, and compares text and PNG cartridge snapshots plus generated text variants. It also compares the exact bytes emitted by each Gfx, Gff, Map, Sfx, and Music `toLines()` serializer, and by every supported Lua writer mode in this port. Cases cover missing domains, labels, Lua line endings, P8SCII glyphs, numeric escapes, comments, tables, nested blocks, and nonzero data in every domain. Lua diagnostic cases compare character and token counts, syntax errors, and both limit warnings. The Node check extracts literal source cases from upstream's Python parser, lexer, and Lua writer tests and compares their results directly with Python. Pure Lua shorthand conversion, cartridge stats, exact compressed Lua bytes, section-source builds, `require()` bundling, Lua listing output, and single-level `.lua`/`.p8` includes have separate Python/Node cases. Mismatches fail the command and report the first differing byte and nearby hex.
+
+The parity boundary and intentionally ignored areas are listed in `README.md`. Python's `LuaASTEchoWriter` raises `IndexError` in `_get_semis` for complete Lua without a final newline, and loop stripping can raise `AssertionError` when a retained statement follows the stripped function; the Node paths reproduce those tested errors. Python picotool also raises `KeyError` on some Unicode Lua comments such as `é`; those inputs remain outside normalized parity because Python cannot produce an oracle result.
+
+This directory contains the dependency-free JavaScript port of the vendored Python picotool implementation. The commands below work in a normal terminal and browser; Codex is not required. Run them from the repository root unless a command explicitly changes directories.
+
+Node and npm are not required for the browser-only test workflow. You need Python 3 to run the original suite and oracle, and a modern browser to run the complete JavaScript suite. On macOS, the system JavaScriptCore executable can also run the non-DOM JavaScript tests from a terminal.
+
+## Directory structure
+
+```text
+packages/picotool-js/
+├── src/                       JavaScript library code; no DOM, Node, or VS Code APIs
+│   ├── picotool.js            Text .p8 parsing and common utilities
+│   ├── sections.js            Gfx, Gff, Map, Sfx, and Music memory models
+│   ├── p8png.js               Hidden PNG data and Lua compression codecs
+│   └── index.js               CommonJS-compatible aggregate entry point
+├── browser/
+│   ├── index.html             Self-contained test interface
+│   ├── app.js                 Test execution, reports, and comparison UI
+│   ├── test-runner.js         Dependency-free test runner
+│   ├── tests.js               Text cartridge and report tests
+│   ├── domain-tests.js        Memory-domain tests ported from Python
+│   ├── png-tests.js           PNG hidden-data and compression tests
+│   ├── fixture-tests.js       Bundled fixture manifest test
+│   ├── png-browser.js         Browser Blob/canvas PNG transport
+│   ├── report-utils.js        Oracle parsing and parity comparison
+│   └── fixture-data.js        Generated fixtures and frozen Python results
+├── tools/
+│   ├── python_suite_report.py Run the complete vendored Python suite as JSON
+│   ├── python_oracle.py       Produce deterministic Python parity results
+│   ├── javascriptcore_report.js
+│   │                          Produce JavaScript parity results on macOS
+│   ├── compare_reports.py     Compare Python and JavaScript JSON reports
+│   └── generate_browser_fixtures.py
+│                              Regenerate browser fixtures and expected results
+├── README.md                  Migration status and quick-start commands
+└── DEVELOPMENT.md             This guide
+```
+
+The original implementation and tests remain under:
+
+```text
+vendor/picotool/               Vendored Python implementation
+vendor/picotool/tests/         Original Python test suite
+vendor/picotool/tests/testdata Cartridge parity fixtures
+```
+
+## Run the JavaScript tests in a browser
+
+Open `packages/picotool-js/browser/index.html` using the browser's **Open File** command, or double-click it in a file manager. No web server is required.
+
+The page performs a fresh run whenever it loads or **Run tests** is clicked. It automatically:
+
+1. Runs the JavaScript unit tests.
+2. Decodes all 11 bundled `.p8` and `.p8.png` fixtures.
+3. Computes new JavaScript snapshots.
+4. Compares them with the bundled results generated by Python picotool.
+
+The expected successful header currently reports 56 passing tests and `bundled Python parity: MATCH (15 cases)`. The 15 parity cases are four structural conformance cases plus 11 cartridge fixtures.
+
+The fixture and oracle file inputs are optional. Use them only when testing additional cartridges or comparing against a newly generated Python report.
+
+## Run the original Python tests
+
+For a concise machine-readable result, run:
+
+```sh
+python3 packages/picotool-js/tools/python_suite_report.py \
+  > /tmp/picotool-python-suite.json
+```
+
+To run the suite directly with Python's unittest runner:
+
+```sh
+cd vendor/picotool
+python3 -m unittest discover -s tests -p '*_test.py' -t .
+```
+
+Return to the repository root before running the remaining examples:
+
+```sh
+cd ../..
+```
+
+The vendored suite has optional Python dependencies. In particular, its direct PNG file tests need the `pypng` package. The parity oracle has a narrow standard-library fallback for PICO-8's 8-bit RGBA PNG format, so generating parity reports does not require that package.
+
+The current checkout's recorded baseline is 271 tests: 265 pass and six error. Two errors are caused by the absent optional `png` module, and four legacy build tests call a `Game.to_p8_file` method not present in this vendored revision. Until those upstream baseline issues are resolved, a nonzero exit from the complete Python suite is expected; compare its identifiers and counts rather than treating it as a JavaScript regression.
+
+## Generate a fresh Python parity report
+
+Generate results for all known text and PNG fixtures:
+
+```sh
+python3 packages/picotool-js/tools/python_oracle.py \
+  vendor/picotool/tests/testdata/*.p8 \
+  vendor/picotool/tests/testdata/*.p8.png \
+  > /tmp/picotool-python.json
+```
+
+To compare this report in the browser:
+
+1. Open or reload `packages/picotool-js/browser/index.html`.
+2. Choose `/tmp/picotool-python.json` using the optional oracle report picker.
+3. Click **Compare with Python**.
+
+The result should say `PARITY MATCH`. Fixture order is irrelevant, but both reports must contain the same fixture names.
+
+## Run the dependency-free codec tests in JavaScriptCore
+
+macOS ships the JavaScriptCore command-line engine used below. This path runs the dependency-free JavaScript unit tests and text cartridge fixtures without Node:
+
+```sh
+/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc \
+  packages/picotool-js/src/p8scii-map.js \
+  packages/picotool-js/src/picotool.js \
+  packages/picotool-js/src/sections.js \
+  packages/picotool-js/src/p8png.js \
+  packages/picotool-js/browser/fixture-data.js \
+  packages/picotool-js/browser/report-utils.js \
+  packages/picotool-js/browser/test-runner.js \
+  packages/picotool-js/browser/tests.js \
+  packages/picotool-js/browser/domain-tests.js \
+  packages/picotool-js/browser/png-tests.js \
+  packages/picotool-js/browser/fixture-tests.js \
+  packages/picotool-js/tools/javascriptcore_report.js \
+  -- vendor/picotool/tests/testdata/*.p8 \
+  > /tmp/picotool-javascript.json
+```
+
+Generate the matching text-only Python report:
+
+```sh
+python3 packages/picotool-js/tools/python_oracle.py \
+  vendor/picotool/tests/testdata/*.p8 \
+  > /tmp/picotool-python-text.json
+```
+
+Compare them:
+
+```sh
+python3 packages/picotool-js/tools/compare_reports.py \
+  /tmp/picotool-python-text.json \
+  /tmp/picotool-javascript.json
+```
+
+A successful comparison prints JSON containing `"matched": true` and exits with status 0. A mismatch lists the affected case identifiers and exits with status 1.
+
+JavaScriptCore does not provide module loading for the `fast-png` dependency, so this command covers the dependency-free codecs and text cartridge fixtures. Run `npm run test:parity --workspace @pico8-studio/picotool` for the complete Node path, including real PNG decoding, encoding, pixel embedding, round trips, and `.p8.png` includes.
+
+## Update the bundled fixtures
+
+After changing the upstream test fixtures or intentional parity behavior, regenerate the browser bundle:
+
+```sh
+python3 packages/picotool-js/tools/generate_browser_fixtures.py
+```
+
+Review the generated `browser/fixture-data.js` change. It contains both fixture bytes and expected Python results; do not edit it manually. Then reload the browser page and verify the unit and parity summaries before committing the milestone.
+
+## Recommended verification sequence
+
+Before committing a migration slice:
+
+1. Run the original Python suite and retain its JSON summary.
+2. Run the browser suite and confirm every JavaScript test passes.
+3. Confirm bundled Python parity matches.
+4. Generate and compare a fresh Python oracle when formats or fixtures changed.
+5. Run `git diff --check` and review only the intended files.
+
+Passing the JavaScript suite establishes parity only for the behavior already ported. It does not imply that the complete Python picotool feature set has been migrated.

@@ -1,0 +1,80 @@
+export type P8SectionName = 'lua' | 'gfx' | 'gff' | 'map' | 'sfx' | 'music' | 'label';
+export type BuildDomainName = Exclude<P8SectionName, 'label'>;
+
+export interface ParsedP8 {
+  readonly format: 'p8';
+  readonly version: number;
+  readonly sectionOrder: readonly P8SectionName[];
+  readonly sections: Readonly<Partial<Record<P8SectionName, readonly string[]>>>;
+}
+
+export class P8Error extends Error {
+  readonly code: string;
+  readonly details?: unknown;
+}
+
+export function parseP8(source: string | Uint8Array | ArrayBuffer): ParsedP8;
+export interface P8WriterOptions {
+  filename?: string;
+  luaWriter?: 'minify' | 'format-token' | 'ast-echo' | 'ast-minify' | 'ast-format';
+  minifyOptions?: { keepAllNames?: boolean; keepNames?: string[] };
+  formatOptions?: { indentwidth?: number };
+}
+export function writeP8(source: ParsedP8 | string | Uint8Array | ArrayBuffer, options?: P8WriterOptions): Uint8Array;
+export function writeP8WithDiagnostics(source: ParsedP8 | string | Uint8Array | ArrayBuffer, options?: P8WriterOptions): {
+  bytes: Uint8Array;
+  characterCount: number;
+  tokenCount: number;
+  warnings: string[];
+};
+export function buildP8(options?: {
+  existing?: string | Uint8Array | ArrayBuffer;
+  sources?: Partial<Record<BuildDomainName, { format: 'p8' | 'lua'; data: string | Uint8Array | ArrayBuffer;
+    filename?: string; files?: Record<string, string | Uint8Array>; luaPath?: string }>>;
+  empty?: BuildDomainName[];
+  luaMinify?: boolean;
+  luaFormat?: boolean;
+  indentwidth?: number;
+}): Uint8Array;
+export function processP8Includes(source: string | Uint8Array | ArrayBuffer, options: {
+  filename: string;
+  readFile: (filename: string) => Uint8Array | undefined;
+  rootPath?: string;
+}): string;
+export function processP8IncludesAsync(source: string | Uint8Array | ArrayBuffer, options: {
+  filename: string;
+  readFile: (filename: string) => Uint8Array | undefined | Promise<Uint8Array | undefined>;
+  rootPath?: string;
+}): Promise<string>;
+export function minifyLua(source: string | Uint8Array, options?: { keepAllNames?: boolean; keepNames?: string[] }): Uint8Array;
+export function formatLuaTokens(source: string | Uint8Array, options?: { indentwidth?: number }): Uint8Array;
+export function minifyLuaAst(source: string | Uint8Array): Uint8Array;
+export function formatLuaAst(source: string | Uint8Array, options?: { indentwidth?: number }): Uint8Array;
+export function echoLuaAst(source: string | Uint8Array): Uint8Array;
+export function pureLua(source: string | Uint8Array): Uint8Array;
+export function cartridgeStats(source: ParsedP8 | string | Uint8Array | ArrayBuffer): {
+  title: Uint8Array | null; byline: Uint8Array | null; version: number;
+  characterCount: number; tokenCount: number; lineCount: number; compressedSize: number;
+};
+export function listLua(source: ParsedP8 | string | Uint8Array | ArrayBuffer, options?: {
+  pure?: boolean; showLineNumbers?: boolean;
+}): string;
+export function listTokens(source: ParsedP8 | string | Uint8Array | ArrayBuffer): string;
+export function bundleRequiredLua(source: string | Uint8Array, options?: {
+  filename?: string; files?: Record<string, string | Uint8Array>; luaPath?: string;
+}): Uint8Array;
+export class LuaBuildError extends Error {}
+export function decodePng(input: Uint8Array | ArrayBuffer): Promise<{
+  width: number; height: number; rgba: Uint8Array;
+}>;
+export function encodePng(image: { width: number; height: number; rgba: Uint8Array }): Promise<Uint8Array>;
+export function readP8Png(input: Uint8Array | ArrayBuffer): Promise<{
+  width: number; height: number; rgba: Uint8Array; picodata: Uint8Array; cartridge: unknown;
+}>;
+export function writeP8Png(cartridge: unknown, labelPng: Uint8Array | ArrayBuffer,
+  luaBytes?: Uint8Array): Promise<Uint8Array>;
+export function writeP8PngFromP8(source: ParsedP8 | string | Uint8Array | ArrayBuffer,
+  labelPng: Uint8Array | ArrayBuffer, options?: P8WriterOptions): Promise<Uint8Array>;
+export function makeEmptyCartridge(options?: { filename?: string; version?: number }): any;
+export function writeCartData(cartridge: any, data: Uint8Array | number[], startAddress?: number): any;
+export function cartridgeCompressedSize(cartridge: any): number;
