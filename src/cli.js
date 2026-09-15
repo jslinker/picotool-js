@@ -227,8 +227,17 @@ const BUILD_DOMAINS = ['lua', 'gfx', 'gff', 'map', 'sfx', 'music'];
 // buildP8's require bundler accepts an in-memory file map. Mirror the Python
 // tool's filesystem lookup by making Lua files beside the entry file visible
 // under their absolute, leading-slash-free paths.
-function luaFilesFor(filename) {
-  const root = path.dirname(path.resolve(filename));
+function luaFilesFor(filename, luaPath) {
+  const entryDirectory = path.dirname(path.resolve(filename));
+  const roots = new Set([entryDirectory]);
+  for (const pattern of (luaPath || '').split(';')) {
+    if (!pattern) continue;
+    const marker = pattern.indexOf('?');
+    const directory = marker < 0 ? pattern : pattern.slice(0, marker);
+    // A load-path pattern names a bounded directory (e.g. modules/?.lua).
+    // Do not walk arbitrary ancestors or the whole project tree.
+    roots.add(path.resolve(entryDirectory, directory || '.'));
+  }
   const files = {};
   function visit(directory) {
     for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
@@ -239,7 +248,7 @@ function luaFilesFor(filename) {
       }
     }
   }
-  visit(root);
+  for (const root of roots) if (fs.existsSync(root) && fs.statSync(root).isDirectory()) visit(root);
   return files;
 }
 
@@ -270,7 +279,7 @@ function runBuild(args, io = {}) {
       if (!fs.existsSync(filename)) throw new Error(`File "${filename}" given for --${domain} arg does not exist.`);
       if (domain === 'lua' && filename.endsWith('.lua')) sources.lua = {
         format: 'lua', data: read(filename, 'utf8'), filename,
-        files: luaFilesFor(filename), luaPath: args.luaPath,
+        files: luaFilesFor(filename, args.luaPath), luaPath: args.luaPath,
       };
       else if (filename.endsWith('.p8')) sources[domain] = { format: 'p8', data: read(filename) };
       else throw new Error(`Unsupported file type for --${domain} arg.`);
@@ -305,7 +314,7 @@ async function asyncBuild(args, io = {}) {
       try { input = await read(filename); } catch { throw new Error(`File "${filename}" given for --${domain} arg does not exist.`); }
       if (domain === 'lua' && filename.endsWith('.lua')) sources.lua = {
         format: 'lua', data: Buffer.from(input).toString('utf8'), filename,
-        files: luaFilesFor(filename), luaPath: args.luaPath,
+        files: luaFilesFor(filename, args.luaPath), luaPath: args.luaPath,
       };
       else if (filename.endsWith('.p8')) sources[domain] = { format: 'p8', data: input };
       else if (filename.endsWith('.p8.png')) sources[domain] = {

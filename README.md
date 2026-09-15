@@ -89,6 +89,7 @@ p8tool luafmt --indentwidth 2 game.p8
 p8tool listtokens game.p8.png
 p8tool luafind --listfiles 'print' game.p8 game.p8.png
 p8tool build --lua main.lua --gfx art.p8.png output.p8.png
+p8tool build --lua main.lua --lua-path 'modules/?.lua' output.p8
 ```
 
 Other commands and overwrite prompting remain on the parity checklist.

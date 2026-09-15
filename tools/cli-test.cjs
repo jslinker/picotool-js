@@ -86,18 +86,29 @@ try {
 const buildDirectory = mkdtempSync(join(tmpdir(), 'picotool-build-test-'));
 try {
   const luaFile = join(buildDirectory, 'main.lua');
-  const moduleFile = join(buildDirectory, 'module.lua');
+  const moduleDirectory = join(buildDirectory, 'modules');
+  const moduleFile = join(moduleDirectory, 'module.lua');
   const outputFile = join(buildDirectory, 'built.p8');
+  require('fs').mkdirSync(moduleDirectory);
   require('fs').writeFileSync(luaFile, '-- Built\nrequire("module")\nprint("ok")\n');
   require('fs').writeFileSync(moduleFile, 'module_value=42\n');
   let buildOutput = '';
-  assert.strictEqual(main(['build', '--lua', luaFile, outputFile], {
+  assert.strictEqual(main(['build', '--lua', luaFile, '--lua-path', 'modules/?.lua', outputFile], {
     write: (text) => { buildOutput += text; }, error: (text) => { throw new Error(text); },
   }), 0);
   assert.match(buildOutput, /built\.p8/);
   const built = require('fs').readFileSync(outputFile, 'utf8');
   assert.match(built, /print\("ok"\)/);
   assert.match(built, /package\._c\["module"\]/);
+  const siblingLua = join(buildDirectory, 'sibling.lua');
+  const siblingMain = join(buildDirectory, 'sibling_main.lua');
+  const siblingOutput = join(buildDirectory, 'sibling.p8');
+  require('fs').writeFileSync(siblingLua, 'sibling_value=7\n');
+  require('fs').writeFileSync(siblingMain, 'require("sibling")\n');
+  assert.strictEqual(main(['build', '--lua', siblingMain, siblingOutput], {
+    write: () => {}, error: (text) => { throw new Error(text); },
+  }), 0);
+  assert.match(require('fs').readFileSync(siblingOutput, 'utf8'), /package\._c\["sibling"\]/);
   assert.deepStrictEqual(parseArgs(['build', '--empty-gfx', outputFile]).empty_gfx, true);
   let buildError = '';
   assert.strictEqual(main(['build', '--lua', luaFile, '--empty-lua', outputFile], {
@@ -110,11 +121,13 @@ const png = resolve(__dirname, '../../../vendor/picotool/tests/testdata/test_car
 const pngOutput = png.replace(/\.p8\.png$/, '_fmt.p8.png');
 const pngBuildDirectory = mkdtempSync(join(tmpdir(), 'picotool-build-png-test-'));
 const pngBuildLua = join(pngBuildDirectory, 'main.lua');
-const pngBuildModule = join(pngBuildDirectory, 'module.lua');
+const pngBuildModuleDirectory = join(pngBuildDirectory, 'modules');
+const pngBuildModule = join(pngBuildModuleDirectory, 'module.lua');
 const pngBuildOutput = join(pngBuildDirectory, 'built.p8.png');
+require('fs').mkdirSync(pngBuildModuleDirectory);
 require('fs').writeFileSync(pngBuildLua, 'require("module")\nprint("png")\n');
 require('fs').writeFileSync(pngBuildModule, 'png_module=true\n');
-mainAsync(['build', '--lua', pngBuildLua, pngBuildOutput], {
+mainAsync(['build', '--lua', pngBuildLua, '--lua-path', 'modules/?.lua', pngBuildOutput], {
   write: () => {}, error: (text) => { throw new Error(text); },
 }).then((status) => {
   assert.strictEqual(status, 0);
