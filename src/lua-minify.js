@@ -9,6 +9,9 @@ const KEYWORDS = new Set('and break do else elseif end false for function goto i
 const PRESERVED = new Set([...KEYWORDS, ...BUILTINS]);
 
 function minifyLua(source, options = {}) {
+  if (options.keepPropertyNames) {
+    const error = new Error(''); error.name = 'NotImplementedError'; throw error;
+  }
   const bytes = typeof source === 'string' ? base.encodeP8scii(source) : source;
   validateLua(bytes);
   const tokens = tokenizeLua(bytes), names = new Map();

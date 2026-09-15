@@ -23,7 +23,7 @@ function emptySections() {
 
 /** Match picotool's section-source and empty-override build behavior for text carts. */
 function buildP8({ existing, sources = {}, empty = [], luaMinify = false, luaFormat = false,
-  indentwidth = 2 } = {}) {
+  indentwidth = 2, optimizeTokens = false } = {}) {
   const previous = existing ? base.parseP8(existing) : null;
   const version = previous?.version ?? DEFAULT_VERSION;
   const sections = previous ? { ...previous.sections } : emptySections();
@@ -32,6 +32,10 @@ function buildP8({ existing, sources = {}, empty = [], luaMinify = false, luaFor
     if (source !== undefined && empty.includes(domain)) throw new Error(`Cannot specify --${domain} and --empty-${domain} args together.`);
     if (source !== undefined) {
       if (domain === 'lua' && source.format === 'lua') {
+        if (optimizeTokens) {
+          const error = new Error('--optimize_tokens not yet implemented, sorry');
+          error.name = 'NotImplementedError'; throw error;
+        }
         const text = typeof source.data === 'string' ? source.data : new TextDecoder().decode(source.data);
         validateLua(base.encodeP8scii(text));
         const bundled = bundleRequiredLua(text, {

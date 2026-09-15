@@ -34,6 +34,7 @@ export function buildP8(options?: {
   empty?: BuildDomainName[];
   luaMinify?: boolean;
   luaFormat?: boolean;
+  optimizeTokens?: boolean;
   indentwidth?: number;
 }): Uint8Array;
 export function processP8Includes(source: string | Uint8Array | ArrayBuffer, options: {
@@ -46,7 +47,7 @@ export function processP8IncludesAsync(source: string | Uint8Array | ArrayBuffer
   readFile: (filename: string) => Uint8Array | undefined | Promise<Uint8Array | undefined>;
   rootPath?: string;
 }): Promise<string>;
-export function minifyLua(source: string | Uint8Array, options?: { keepAllNames?: boolean; keepNames?: string[] }): Uint8Array;
+export function minifyLua(source: string | Uint8Array, options?: { keepAllNames?: boolean; keepNames?: string[]; keepPropertyNames?: boolean }): Uint8Array;
 export function formatLuaTokens(source: string | Uint8Array, options?: { indentwidth?: number }): Uint8Array;
 export function minifyLuaAst(source: string | Uint8Array): Uint8Array;
 export function formatLuaAst(source: string | Uint8Array, options?: { indentwidth?: number }): Uint8Array;

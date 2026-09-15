@@ -14,11 +14,12 @@
   ],
   "license": "MIT",
   "scripts": {
-    "test": "node tools/file-api-test.cjs && node tools/token-model-test.cjs && node tools/cli-test.cjs && node tools/png-edge-test.cjs && node tools/lua-find-test.cjs && node tools/check-parity.cjs",
+    "test": "node tools/file-api-test.cjs && node tools/token-model-test.cjs && node tools/cli-test.cjs && node tools/png-edge-test.cjs && node tools/lua-find-test.cjs && node tools/unimplemented-test.cjs && node tools/check-parity.cjs",
     "test:file-api": "node tools/file-api-test.cjs",
     "test:cli": "node tools/cli-test.cjs",
     "test:png-edge": "node tools/png-edge-test.cjs",
     "test:lua-find": "node tools/lua-find-test.cjs",
+    "test:unimplemented": "node tools/unimplemented-test.cjs",
     "test:token-model": "node tools/token-model-test.cjs",
     "test:parity": "node tools/check-parity.cjs"
   },

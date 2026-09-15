@@ -22,7 +22,7 @@ The supported JavaScript behavior is checked by running Node and Python over the
 - Python 3 `luafind` searches a bytes line with a string regex and raises `TypeError`. JavaScript intentionally implements the documented intended line search through `findLua()`; CLI integration and broader cases remain to be checked.
 - `listrawlua` calls the missing `Game.get_raw_data_from_p8_file()` API in the vendored revision.
 - `.rom` is recognized by filename and raises `NotImplementedError` on reading and writing, as the upstream formatter does; usable ROM transport remains unavailable upstream.
-- `--optimize-tokens` and property-name-preserving minification raise `NotImplementedError` in Python.
+- `buildP8({ optimizeTokens: true })` for `.lua` sources and `minifyLua(..., { keepPropertyNames: true })` now reproduce Python's `NotImplementedError`; usable implementations remain unavailable upstream.
 
 ### PNG edge cases and transport
 
