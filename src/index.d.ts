@@ -104,6 +104,7 @@ export class LuaSource {
   toBytes(): Uint8Array;
   toLines(): string[];
   to_lines(): string[];
+  readonly root: Chunk;
 }
 export class Game {
   constructor(filename?: string | null, compressedSize?: number | null);
@@ -162,6 +163,65 @@ export function analyzeLua(source: string | Uint8Array, filename?: string): {
 export function echoLua(source: string | Uint8Array): Uint8Array;
 export function findLua(source: ParsedP8 | string | Uint8Array | ArrayBuffer,
   pattern: string | RegExp, options?: { filename?: string; listFiles?: boolean }): string;
+export class LuaAstError extends SyntaxError {}
+export class Node {
+  constructor(type: string, fields?: Record<string, unknown>, first?: unknown, last?: unknown, source?: string);
+  type: string;
+  _name: string;
+  _fields: string[];
+  readonly start_pos: number | null;
+  readonly end_pos: number | null;
+  readonly tokens: IterableIterator<Token>;
+  storeTokenGroups(tokenlist: Token[]): this;
+  store_token_groups(tokenlist: Token[]): this;
+  iterTokens(): IterableIterator<Token>;
+  children(): Node[];
+  walk(visitor: ((node: Node) => void) | { visit(node: Node): void }): this;
+}
+export { Node as LuaNode };
+export class Chunk extends Node { stats: Node[]; }
+export class StatAssignment extends Node { varlist: VarList; assignop: TokSymbol; explist: ExpList; }
+export class StatFunctionCall extends Node { functioncall: FunctionCall | FunctionCallMethod; }
+export class StatDo extends Node { block: Chunk; }
+export class StatWhile extends Node { exp: Node; block: Chunk; }
+export class StatRepeat extends Node { block: Chunk; exp: Node; }
+export class StatIf extends Node { exp_block_pairs: Array<[Node | null, Chunk]>; }
+export class StatForStep extends Node { name: TokName; exp_init: Node; exp_end: Node; exp_step: Node | null; block: Chunk; }
+export class StatForIn extends Node { namelist: NameList; explist: ExpList; block: Chunk; }
+export class StatFunction extends Node { funcname: FunctionName; funcbody: FunctionBody; }
+export class StatLocalFunction extends Node { funcname: TokName; funcbody: FunctionBody; }
+export class StatLocalAssignment extends Node { namelist: NameList; explist: ExpList | null; }
+export class StatGoto extends Node { label: string; }
+export class StatLabel extends Node { label: string; }
+export class StatBreak extends Node {}
+export class StatReturn extends Node { explist: ExpList | null; }
+export class FunctionName extends Node { namepath: TokName[]; methodname: TokName | null; }
+export class FunctionArgs extends Node { explist: ExpList | null; }
+export class VarList extends Node { vars: Node[]; }
+export class VarName extends Node { name: TokName; }
+export class VarIndex extends Node { exp_prefix: Node; exp_index: Node; }
+export class VarAttribute extends Node { exp_prefix: Node; attr_name: TokName; }
+export class NameList extends Node { names: TokName[]; }
+export class ExpList extends Node { exps: Node[]; }
+export class ExpValue extends Node { value: Node | Token | boolean | null; }
+export class VarargDots extends Node {}
+export class ExpBinOp extends Node { exp1: Node; binop: TokSymbol | TokKeyword; exp2: Node; }
+export class ExpUnOp extends Node { unop: TokSymbol | TokKeyword; exp: Node; }
+export class FunctionCall extends Node { exp_prefix: Node; args: FunctionArgs | TableConstructor | string | null; }
+export class FunctionCallMethod extends Node { exp_prefix: Node; methodname: TokName; args: FunctionArgs | TableConstructor | string | null; }
+export class Function extends Node { funcbody: FunctionBody; }
+export class FunctionBody extends Node { parlist: NameList | null; dots: VarargDots | null; block: Chunk; }
+export class TableConstructor extends Node { fields: Node[]; }
+export class FieldExp extends Node { exp: Node; }
+export class FieldExpKey extends Node { key_exp: Node; exp: Node; }
+export class FieldNamedKey extends Node { key_name: TokName; exp: Node; }
+export class FieldOtherThing extends Node {}
+export class FieldNamed extends Node {}
+export class AstParser { constructor(source: string | Uint8Array); parse(): Chunk; }
+export function parseLua(source: string | Uint8Array): Chunk;
+export function parseLuaAst(source: string | Uint8Array): Chunk;
+export function printAst(source: string | Uint8Array): string;
+export function printNode(value: unknown, indent?: number, prefix?: string, output?: string[]): string[];
 export class BaseASTWalker {
   constructor(tokens: Token[], root: any, args?: Record<string, unknown>);
   protected _tokens: Token[];

@@ -48,6 +48,8 @@ async function main() {
     assert.equal(game.compressed_size, null);
     assert.equal(typeof game.get_compressed_size(), 'number');
     game.lua.update_from_lines(['x=1\n']);
+    assert.equal(game.lua.root.type, 'Chunk');
+    assert.equal(game.lua.root.stats[0].type, 'StatAssignment');
     game.write_cart_data([0x5a], 0x3000);
     assert.equal(game.gff._data[0], 0x5a);
     await game.to_p8_file(textPath);

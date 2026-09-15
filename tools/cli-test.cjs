@@ -5,6 +5,7 @@ const { resolve } = require('node:path');
 const { join } = require('node:path');
 const { mkdtempSync, rmSync } = require('node:fs');
 const { tmpdir } = require('node:os');
+const { spawnSync } = require('node:child_process');
 const { formatStats, main, mainAsync, parseArgs, statsRows } = require('../src/cli');
 
 const cart = [
@@ -129,6 +130,63 @@ try {
   assert.match(buildError, /Cannot specify --lua and --empty-lua/);
 } finally { rmSync(buildDirectory, { recursive: true, force: true }); }
 
+let astOutput = '';
+assert.strictEqual(main(['printast', resolve(__dirname, '../../../vendor/picotool/tests/testdata/test_cart.p8')], {
+  write: (text) => { astOutput += text; }, error: (text) => { throw new Error(text); },
+}), 0);
+assert.match(astOutput, /^Chunk\n  \* stats: \[list:\]/);
+assert.match(astOutput, /StatFunctionCall/);
+const vendoredAst = spawnSync('python3', ['-c', String.raw`import sys
+from pico8 import tool
+from pico8.game import file
+game = file.from_file(sys.argv[1])
+tool._printast_node(game.lua.root)`, resolve(__dirname, '../../../vendor/picotool/tests/testdata/test_cart.p8')], {
+  env: { ...process.env, PYTHONPATH: '../../vendor/picotool' },
+});
+assert.strictEqual(vendoredAst.status, 0, vendoredAst.stderr.toString());
+assert.strictEqual(astOutput, vendoredAst.stdout.toString());
+const golCart = resolve(__dirname, '../../../vendor/picotool/tests/testdata/test_gol.p8');
+let golAstOutput = '';
+assert.strictEqual(main(['printast', golCart], { write: (value) => { golAstOutput += value; }, error: (value) => { throw new Error(value); } }), 0);
+const upstreamGolAst = spawnSync('python3', ['-c', String.raw`import sys
+from pico8 import tool
+from pico8.game import file
+tool._printast_node(file.from_file(sys.argv[1]).lua.root)`, golCart], { env: { ...process.env, PYTHONPATH: '../../vendor/picotool' } });
+assert.strictEqual(upstreamGolAst.status, 0, upstreamGolAst.stderr.toString());
+assert.strictEqual(golAstOutput, upstreamGolAst.stdout.toString());
+const exactAstDirectory = mkdtempSync(join(tmpdir(), 'picotool-ast-test-'));
+try {
+  const exactAstFile = join(exactAstDirectory, 'simple.p8');
+  require('fs').writeFileSync(exactAstFile, 'pico-8 cartridge // http://www.pico-8.com\nversion 33\n__lua__\nx=1\nprint(x)\n');
+  let exactAst = '';
+  assert.strictEqual(main(['printast', exactAstFile], { write: (text) => { exactAst += text; }, error: (text) => { throw new Error(text); } }), 0);
+  assert.match(exactAst, /TokName<b'x', line 0 char 0>/);
+  assert.match(exactAst, /TokSymbol<b'=', line 0 char 1>/);
+  assert.match(exactAst, /TokNumber<b'1', line 0 char 2>/);
+  assert.match(exactAst, /TokName<b'print', line 1 char 0>/);
+  const printAstPython = String.raw`import sys
+from pico8 import tool
+from pico8.lua import lexer, parser
+source = sys.stdin.buffer.read()
+lexed = lexer.Lexer(4)
+lexed.process_lines([source])
+parsed = parser.Parser(4)
+parsed.process_tokens(lexed.tokens)
+tool._printast_node(parsed.root)`;
+  const upstreamAst = spawnSync('python3', ['-c', printAstPython], {
+    input: Buffer.from('x=1\nprint(x)\n'),
+    env: { ...process.env, PYTHONPATH: '../../vendor/picotool' },
+  });
+  assert.strictEqual(upstreamAst.status, 0, upstreamAst.stderr.toString());
+  assert.strictEqual(exactAst, upstreamAst.stdout.toString());
+} finally { rmSync(exactAstDirectory, { recursive: true, force: true }); }
+let astErrors = '', multiAstOutput = '';
+assert.strictEqual(main(['printast', 'missing.p8', resolve(__dirname, '../../../vendor/picotool/tests/testdata/test_cart.p8')], {
+  write: (text) => { multiAstOutput += text; }, error: (text) => { astErrors += text; },
+}), 0);
+assert.match(astErrors, /missing\.p8: could not load cart/);
+assert.match(multiAstOutput, /=== .*test_cart\.p8 ===\nChunk/);
+
 const png = resolve(__dirname, '../../../vendor/picotool/tests/testdata/test_cart.p8.png');
 const pngOutput = png.replace(/\.p8\.png$/, '_fmt.p8.png');
 const pngBuildDirectory = mkdtempSync(join(tmpdir(), 'picotool-build-png-test-'));
@@ -151,6 +209,14 @@ mainAsync(['build', '--lua', pngBuildLua, '--lua-path', 'modules/?.lua', pngBuil
   assert.strictEqual(status, 0);
   rmSync(pngBuildDirectory, { recursive: true, force: true });
 }).catch((error) => { throw error; });
+let pngAst = '', textAst = '';
+assert.strictEqual(main(['printast', resolve(__dirname, '../../../vendor/picotool/tests/testdata/test_cart.p8')], {
+  write: (text) => { textAst += text; }, error: (text) => { throw new Error(text); },
+}), 0);
+mainAsync(['printast', png], {
+  write: (text) => { pngAst += text; },
+  error: (text) => { throw new Error(text); },
+}).then((status) => { assert.strictEqual(status, 0); assert.strictEqual(pngAst, textAst); }).catch((error) => { throw error; });
 mainAsync(['stats', png], {
   write: (text) => { out += text; }, error: (text) => { err += text; },
 }).then((status) => {

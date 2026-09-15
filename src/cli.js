@@ -13,6 +13,7 @@ const { writeP8 } = require('./p8writer');
 const { buildP8 } = require('./build');
 const fileApi = require('./file-api');
 const { Game } = require('./game');
+const { printAst } = require('./ast-print');
 
 function parseArgs(argv = []) {
   const args = Array.from(argv);
@@ -27,7 +28,7 @@ function parseArgs(argv = []) {
       throw new Error(`unknown option: ${arg}`);
     } else if (result.command === null) {
       result.command = arg;
-      if (!['stats', 'listlua', 'listtokens', 'listrawlua', 'writep8', 'luamin', 'luafmt', 'luafind', 'build'].includes(arg)) throw new Error(`unknown command: ${arg}`);
+      if (!['stats', 'listlua', 'listtokens', 'listrawlua', 'writep8', 'luamin', 'luafmt', 'luafind', 'build', 'printast'].includes(arg)) throw new Error(`unknown command: ${arg}`);
     } else if (arg === '--csv' && result.command === 'stats') {
       result.csv = true;
     } else if (arg === '--show-line-numbers' && result.command === 'listlua') {
@@ -291,6 +292,46 @@ function runBuild(args, io = {}) {
   } catch (exception) { error(`${exception.message}\n`); return 1; }
 }
 
+function p8LuaSource(input) {
+  const parsed = require('./picotool').parseP8(input);
+  return (parsed.sections.lua || []).join('');
+}
+
+function runPrintAst(args, io = {}) {
+  const write = io.write || ((text) => process.stdout.write(text));
+  const error = io.error || ((text) => process.stderr.write(text));
+  let failed = false;
+  for (const filename of args.filename) {
+    try {
+      if (!filename.endsWith('.p8')) throw new Error('filename must end in .p8 or .p8.png');
+      const source = p8LuaSource((io.readFile || fs.readFileSync)(filename));
+      if (args.filename.length > 1) write(`=== ${filename} ===\n`);
+      write(printAst(source));
+    } catch (exception) { failed = true; error(`${filename}: ${exception.message}\n${filename}: could not load cart\n`); }
+  }
+  return failed && args.filename.length === 1 ? 1 : 0;
+}
+
+async function asyncPrintAst(args, io = {}) {
+  const write = io.write || ((text) => process.stdout.write(text));
+  const error = io.error || ((text) => process.stderr.write(text));
+  let failed = false;
+  for (const filename of args.filename) {
+    try {
+      const input = await (io.readFile || fs.promises.readFile)(filename);
+      let source;
+      if (filename.endsWith('.p8')) source = p8LuaSource(input);
+      else if (filename.endsWith('.p8.png')) {
+        const cartridge = (await fileApi.fromBytes(input, filename));
+        source = require('./game').Game.fromCartridge(cartridge, filename).lua.toLines().join('');
+      } else throw new Error('filename must end in .p8 or .p8.png');
+      if (args.filename.length > 1) write(`=== ${filename} ===\n`);
+      write(printAst(source));
+    } catch (exception) { failed = true; error(`${filename}: ${exception.message}\n${filename}: could not load cart\n`); }
+  }
+  return failed && args.filename.length === 1 ? 1 : 0;
+}
+
 async function asyncBuild(args, io = {}) {
   const write = io.write || ((text) => process.stdout.write(text));
   const error = io.error || ((text) => process.stderr.write(text));
@@ -455,6 +496,7 @@ async function mainAsync(argv = process.argv.slice(2), io = {}) {
     if (['writep8', 'luamin', 'luafmt'].includes(args.command) && args.filename.some((filename) => filename.endsWith('.p8.png'))) return asyncWrite(args, io);
     if (args.command === 'luafind' && args.filename.slice(1).some((filename) => filename.endsWith('.p8.png'))) return asyncLuaFind(args, io);
     if (args.command === 'build') return asyncBuild(args, io);
+    if (args.command === 'printast') return asyncPrintAst(args, io);
     if (args.command !== 'stats') return main(argv, io);
     const write = io.write || ((text) => process.stdout.write(text));
     const error = io.error || ((text) => process.stderr.write(text));
@@ -476,6 +518,7 @@ function main(argv = process.argv.slice(2), io = {}) {
     if (['listlua', 'listtokens', 'listrawlua'].includes(args.command)) return runListing(args, io);
     if (args.command === 'luafind') return runLuaFind(args, io);
     if (args.command === 'build') return runBuild(args, io);
+    if (args.command === 'printast') return runPrintAst(args, io);
     if (['writep8', 'luamin', 'luafmt'].includes(args.command)) return runWrite(args, io);
     return 1;
   } catch (error) {
@@ -484,4 +527,4 @@ function main(argv = process.argv.slice(2), io = {}) {
   }
 }
 
-module.exports = Object.freeze({ asyncBuild, asyncStatsRows, buildOptions, friendly, formatStats, main, mainAsync, parseArgs, runBuild, runListing, runStats, statsRows });
+module.exports = Object.freeze({ asyncBuild, asyncPrintAst, asyncStatsRows, buildOptions, friendly, formatStats, main, mainAsync, parseArgs, runBuild, runListing, runPrintAst, runStats, statsRows });

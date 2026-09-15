@@ -20,5 +20,7 @@ const game = require('./game');
 const lexer = require('./lua-lexer');
 const find = require('./lua-find');
 const walker = require('./lua-ast-walker');
+const astModel = require('./lua-ast-model');
+const astPrint = require('./ast-print');
 
-module.exports = Object.freeze({ ...base, ...sections, ...p8png, ...p8writer, ...build, ...includes, ...minify, ...formatToken, ...requireBuild, ...astWriters, ...pure, ...stats, ...listing, ...pngTransport, ...cartridge, ...fileApi, ...game, ...lexer, ...find, ...walker });
+module.exports = Object.freeze({ ...base, ...sections, ...p8png, ...p8writer, ...build, ...includes, ...minify, ...formatToken, ...requireBuild, ...astWriters, ...pure, ...stats, ...listing, ...pngTransport, ...cartridge, ...fileApi, ...game, ...lexer, ...find, ...walker, ...astModel, ...astPrint });

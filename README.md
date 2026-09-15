@@ -79,7 +79,7 @@ picotool.findLua(cartridge, 'print', { filename: 'game.p8' });
 
 ### CLI progress
 
-The Node package exposes `p8tool` for `stats`, `listlua`, `listrawlua`, `listtokens`, `writep8`, `luamin`, `luafmt`, `build`, and the intended `luafind` search behavior. It accepts multiple cartridge paths and continues after a load failure. `stats --csv` emits the same columns and CRLF row endings as Python's CSV writer. PNG cartridge statistics, parsed listings, writer commands, Lua search, and builds use the asynchronous PNG transport; raw Lua listing currently requires text `.p8` carts:
+The Node package exposes `p8tool` for `stats`, `listlua`, `listrawlua`, `listtokens`, `writep8`, `luamin`, `luafmt`, `build`, `printast`, and the intended `luafind` search behavior. It accepts multiple cartridge paths and continues after a load failure. `stats --csv` emits the same columns and CRLF row endings as Python's CSV writer. PNG cartridge statistics, parsed listings, writer commands, Lua search, builds, and AST debugging use the asynchronous PNG transport; raw Lua listing currently requires text `.p8` carts:
 
 ```sh
 p8tool stats game.p8 game.p8.png
@@ -90,11 +90,12 @@ p8tool listtokens game.p8.png
 p8tool luafind --listfiles 'print' game.p8 game.p8.png
 p8tool build --lua main.lua --gfx art.p8.png output.p8.png
 p8tool build --lua main.lua --lua-path 'modules/?.lua' output.p8
+p8tool printast game.p8.png
 ```
 
-Other commands and overwrite prompting remain on the parity checklist.
+Remaining command-presentation and argument edges are tracked in [PARITY.md](PARITY.md). The vendored Python writer does not prompt before overwrite.
 
-The implemented compatibility scope is the structural parser and Node-based echo, token-minifying, token-formatting, AST-echoing, AST-minifying, and AST-formatting writers for text `.p8` cartridges; decoded Gfx, Gff, Map, Music, and Sfx memory APIs; empty-cartridge creation and arbitrary cartridge-memory writes; `.p8.png` reading, writing, hidden-data encoding, and Lua decompression; filename-selected `fromFile()`/`toFile()` cartridge I/O; Pure Lua shorthand conversion; cartridge stats, token listings, and compression; section-source builds; `require()` bundling; and single-level `.lua`/`.p8`/`.p8.png` includes. The Node parity command compares these outputs directly with Python picotool, including complete writer output bytes, diagnostics, and pixel embedding at every cartridge memory boundary.
+The implemented compatibility scope is the structural parser, public Python-named `parseLua()` AST with token ranges and token regeneration, `p8tool printast`, and Node-based echo, token-minifying, token-formatting, AST-echoing, AST-minifying, and AST-formatting writers for text `.p8` cartridges; decoded Gfx, Gff, Map, Music, and Sfx memory APIs; empty-cartridge creation and arbitrary cartridge-memory writes; `.p8.png` reading, writing, hidden-data encoding, and Lua decompression; filename-selected `fromFile()`/`toFile()` cartridge I/O; Pure Lua shorthand conversion; cartridge stats, token listings, and compression; section-source builds; `require()` bundling; and single-level `.lua`/`.p8`/`.p8.png` includes. The Node parity command compares these outputs directly with Python picotool, including complete writer output bytes, diagnostics, and pixel embedding at every cartridge memory boundary.
 
 The complete list of remaining and intentionally excluded behavior is maintained in [PARITY.md](PARITY.md). The main exclusions are:
 
@@ -102,8 +103,8 @@ The complete list of remaining and intentionally excluded behavior is maintained
 - Malformed PNG labels with fewer than four 8-bit color planes are rejected, since Python's cartridge codec assumes four planes and may fail or mix channels.
 - Adam7-interlaced RGBA labels can be read and reused; writer output preserves their visible pixels but may use non-interlaced PNG transport.
 - PNG Lua writes reject payloads that exceed the format's 16-bit length header or fixed code region; Python can fail or produce oversized byte arrays for these inputs.
-- Python parser AST classes, walker subclasses, and AST debug printing. The Node API validates grammar and reproduces the observable writer and `require()` outputs used by the extension; it does not expose Python-shaped AST objects.
-- CLI-only orchestration and presentation details such as `printast`, overwrite prompting, and command-specific error formatting. `listLua()` and `listTokens()` cover the working Lua and token listing output.
+- Remaining AST class-constructor, internal token-group representation, parser-fragment, and `BaseASTWalker` mutation edges. Public AST fields, token values, spans, and regenerated token streams are compared recursively with Python on the supported full-program corpus and text carts.
+- Remaining CLI presentation and argument edges, including command-specific error formatting. `listLua()` and `listTokens()` cover the working Lua and token listing output.
 - Raw Lua listing, which calls the missing `Game.get_raw_data_from_p8_file` API in this vendored revision.
 - Usable `.rom` input and output. Both Python and JavaScript recognize the extension but raise `NotImplementedError` because Python's `ROMFormatter` has no implementation.
 - The demo script and Python-specific utility globals, logging streams, and exception inheritance details.

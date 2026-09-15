@@ -6,16 +6,14 @@ The supported JavaScript behavior is checked by running Node and Python over the
 
 ### Public parser AST model
 
-- Add Python-compatible AST node classes, fields, and token ranges. Lexer tokens now expose Python-style debug representations, but the draft AST still stores some token-valued fields as plain strings; token-aware recursive comparisons remain required before public integration.
-- Integrate the implemented `BaseASTWalker` dispatch with a complete parser AST, including all node handlers and token-valued fields, then verify traversal and mutation parity.
-- Add AST debug output for `printast`. Observable formatter and minifier output already matches.
+- Public `parseLua()` exposes Python-named AST classes, fields, token spans, and token-valued fields. Its recursive Python oracle matches 15 focused programs, all 33 fully consumed programs in the vendored parser-test corpus, and upstream text-cart fixtures; token regeneration also matches on the tested carts. Python's 39 parser-test fragment/residual-input cases are classified separately and are not yet emulated as public `parseLua()` behavior.
+- Verify all `BaseASTWalker` node handlers and traversal/mutation behavior against the public AST, beyond the current generic dispatch and selected token/child mutation tests. Match remaining Python node-constructor and internal token-group representation edge cases.
 
 ### CLI orchestration and presentation
 
 - Match multi-file headings, error continuation, argument parsing, and exit codes.
 - Match remaining filesystem-wrapper edge cases for `writep8`, `luamin`, and `luafmt`, including `luafmt --overwrite` for text carts. Writer commands now report the output path after a successful cart load and before a write attempt, as Python does. The vendored Python writer does not prompt before overwrite.
-- Extend the `p8tool` entry point beyond the implemented `stats`, `listlua`, `listtokens`, `writep8`, `luamin`, `luafmt`, `luafind`, and `build` slices for text and PNG carts; raw listing is text-only. `build` accepts Lua module sources, `--lua-path` module lookups, and section overrides, including PNG carts, but its name-preservation options and some filesystem/argument edge cases need Python comparison. Check output naming, presentation and argument edge cases against Python.
-- Add `printast` after the public AST model exists.
+- Extend the `p8tool` entry point beyond the implemented `stats`, `listlua`, `listtokens`, `writep8`, `luamin`, `luafmt`, `luafind`, `build`, and `printast` slices for text and PNG carts; raw listing is text-only. `build` accepts Lua module sources, `--lua-path` module lookups, and section overrides, including PNG carts, but its name-preservation options and some filesystem/argument edge cases need Python comparison. `printast` text output matches Python byte-for-byte on focused and vendored-cart fixtures; PNG output matches the equivalent text cart, because the Python PNG reader dependency is absent here. Check remaining output naming, presentation and argument edge cases against Python.
 
 ### Broken or unavailable upstream behavior
 

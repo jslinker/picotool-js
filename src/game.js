@@ -22,6 +22,7 @@ class LuaSource {
   toBytes() { return this.code.slice(); }
   toLines() { return base.decodeP8scii(this.code).match(/[^\n]*\n|[^\n]+$/g) || []; }
   to_lines() { return this.toLines(); }
+  get root() { return require('./lua-ast-model').parseLua(this.code); }
 }
 
 class Game {
