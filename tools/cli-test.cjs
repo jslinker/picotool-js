@@ -2,6 +2,9 @@
 
 const assert = require('assert');
 const { resolve } = require('node:path');
+const { join } = require('node:path');
+const { mkdtempSync, rmSync } = require('node:fs');
+const { tmpdir } = require('node:os');
 const { formatStats, main, mainAsync, parseArgs, statsRows } = require('../src/cli');
 
 const cart = [
@@ -43,6 +46,28 @@ assert.match(listing, /print/);
 listing = '';
 assert.strictEqual(main(['listtokens', 'one.p8'], { readFile: read, write: (text) => { listing += text; } }), 0);
 assert.match(listing, /<0:/);
+const invalidLua = `${cart.split('__lua__\n')[0]}__lua__\nnot valid @@@\n`;
+const rawFiles = (filename) => filename === 'bad-lua.p8' ? Buffer.from(invalidLua) : read(filename);
+listing = '';
+assert.strictEqual(main(['listrawlua', 'bad-lua.p8'], {
+  readFile: rawFiles, write: (text) => { listing += text; }, error: () => {},
+}), 0);
+assert.match(listing, /not valid @@@/);
+
+const testDirectory = mkdtempSync(join(tmpdir(), 'picotool-cli-test-'));
+try {
+  const writableCart = join(testDirectory, 'game.p8');
+  require('fs').writeFileSync(writableCart, cart);
+  let writes = '';
+  assert.strictEqual(main(['writep8', writableCart], {
+    write: (text) => { writes += text; }, error: (text) => { throw new Error(text); },
+  }), 0);
+  assert.match(writes, /_fmt\.p8/);
+  assert.ok(require('fs').existsSync(join(testDirectory, 'game_fmt.p8')));
+  assert.strictEqual(main(['luafmt', '--overwrite', writableCart], {
+    write: () => {}, error: (text) => { throw new Error(text); },
+  }), 0);
+} finally { rmSync(testDirectory, { recursive: true, force: true }); }
 
 const png = resolve(__dirname, '../../../vendor/picotool/tests/testdata/test_cart.p8.png');
 mainAsync(['stats', png], {

@@ -8,6 +8,7 @@ const path = require('path');
 const { cartridgeStats } = require('./stats');
 const { listLua, listTokens } = require('./listing');
 const { readP8Png } = require('./png-transport');
+const { writeP8 } = require('./p8writer');
 
 function parseArgs(argv = []) {
   const args = Array.from(argv);
@@ -22,13 +23,22 @@ function parseArgs(argv = []) {
       throw new Error(`unknown option: ${arg}`);
     } else if (result.command === null) {
       result.command = arg;
-      if (!['stats', 'listlua', 'listtokens'].includes(arg)) throw new Error(`unknown command: ${arg}`);
+      if (!['stats', 'listlua', 'listtokens', 'listrawlua', 'writep8', 'luamin', 'luafmt'].includes(arg)) throw new Error(`unknown command: ${arg}`);
     } else if (arg === '--csv' && result.command === 'stats') {
       result.csv = true;
     } else if (arg === '--show-line-numbers' && result.command === 'listlua') {
       result.showLineNumbers = true;
     } else if (arg === '--pure-lua' && result.command === 'listlua') {
       result.pureLua = true;
+    } else if (arg === '--show-line-numbers' && result.command === 'listrawlua') {
+      result.showLineNumbers = true;
+    } else if (arg === '--overwrite' && result.command === 'luafmt') {
+      result.overwrite = true;
+    } else if (arg === '--indentwidth' && result.command === 'luafmt') {
+      result.indentwidth = Number(args.shift());
+      if (!Number.isInteger(result.indentwidth)) throw new Error('--indentwidth must be an integer');
+    } else if (arg === '--keep-all-names' && result.command === 'luamin') {
+      result.keepAllNames = true;
     } else if (arg.startsWith('-')) {
       throw new Error(`unknown option: ${arg}`);
     } else {
@@ -105,14 +115,59 @@ function runStats(args, io = {}) {
 function runListing(args, io = {}) {
   const write = io.write || ((text) => process.stdout.write(text));
   const error = io.error || ((text) => process.stderr.write(text));
-  const { rows, errors } = statsRows(args.filename, io.readFile || fs.readFileSync);
+  const read = io.readFile || fs.readFileSync;
+  const { rows, errors } = args.command === 'listrawlua'
+    ? (() => {
+      const rawRows = [], rawErrors = [];
+      for (const filename of args.filename) {
+        try {
+          if (!filename.endsWith('.p8')) throw new Error('filename must end in .p8 (PNG raw listing is async)');
+          rawRows.push({ filename, source: read(filename) });
+        } catch (exception) { rawErrors.push({ filename, error: exception }); }
+      }
+      return { rows: rawRows, errors: rawErrors };
+    })()
+    : statsRows(args.filename, read);
   for (const item of errors) error(`${item.filename}: ${item.error.message}\n${item.filename}: could not load cart\n`);
   for (const { filename, source } of rows) {
     if (args.command === 'listlua') write((args.filename.length > 1 ? `=== ${filename} ===\n` : '') +
       listLua(source, { pure: args.pureLua, showLineNumbers: args.showLineNumbers }));
-    else write((args.filename.length > 1 ? `=== ${filename} ===\n` : '') + listTokens(source));
+    else if (args.command === 'listrawlua') {
+      const parsed = require('./picotool').parseP8(source);
+      const lines = (parsed.sections.lua || []).join('').match(/[^\n]*\n|[^\n]+$/g) || [];
+      write((args.filename.length > 1 ? `=== ${filename} ===\n` : '') + lines.map((line, index) =>
+        `${args.showLineNumbers ? `${index}: ` : ''}${friendly(Buffer.from(line, 'latin1'))}`).join('') + '\n');
+    } else write((args.filename.length > 1 ? `=== ${filename} ===\n` : '') + listTokens(source));
   }
   return errors.length && args.filename.length === 1 ? 1 : 0;
+}
+
+function outputName(filename, command, overwrite) {
+  if (command === 'luafmt' && overwrite && filename.endsWith('.p8')) return filename;
+  if (filename.endsWith('.p8.png')) return filename.slice(0, -7) + '_fmt.p8.png';
+  if (filename.endsWith('.p8')) return filename.slice(0, -3) + '_fmt.p8';
+  throw new Error('filename must end in .p8 or .p8.png');
+}
+
+function runWrite(args, io = {}) {
+  const write = io.write || ((text) => process.stdout.write(text));
+  const error = io.error || ((text) => process.stderr.write(text));
+  let failed = false;
+  for (const filename of args.filename) {
+    try {
+      if (!filename.endsWith('.p8')) throw new Error('filename must end in .p8 (PNG writing is async)');
+      const output = outputName(filename, args.command, args.overwrite);
+      const source = require('./picotool').parseP8((io.readFile || fs.readFileSync)(filename));
+      const luaWriter = args.command === 'luamin' ? 'minify' : args.command === 'luafmt' ? 'format-token' : undefined;
+      const bytes = writeP8(source, { luaWriter, minifyOptions: { keepAllNames: args.keepAllNames }, formatOptions: { indentwidth: args.indentwidth ?? 2 } });
+      (io.writeFile || fs.writeFileSync)(output, bytes);
+      write(`${filename} -> ${output}\n`);
+    } catch (exception) {
+      failed = true;
+      error(`${filename}: ${exception.message}\n`);
+    }
+  }
+  return failed ? 1 : 0;
 }
 
 async function asyncStatsRows(filenames, readFile = fs.promises.readFile) {
@@ -154,7 +209,8 @@ function main(argv = process.argv.slice(2), io = {}) {
     const args = parseArgs(argv);
     if (!args.command) return 1;
     if (args.command === 'stats') return runStats(args, io);
-    if (args.command === 'listlua' || args.command === 'listtokens') return runListing(args, io);
+    if (['listlua', 'listtokens', 'listrawlua'].includes(args.command)) return runListing(args, io);
+    if (['writep8', 'luamin', 'luafmt'].includes(args.command)) return runWrite(args, io);
     return 1;
   } catch (error) {
     (io.error || ((text) => process.stderr.write(text)))(`picotool: ${error.message}\n`);
