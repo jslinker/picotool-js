@@ -1,0 +1,165 @@
+'use strict';
+
+// Synchronous, Node-oriented command-line helpers.  The public library stays
+// browser-safe; consumers that need a CLI can call main() from a small bin
+// wrapper without duplicating picotool's argument and stats semantics.
+const fs = require('fs');
+const path = require('path');
+const { cartridgeStats } = require('./stats');
+const { listLua, listTokens } = require('./listing');
+const { readP8Png } = require('./png-transport');
+
+function parseArgs(argv = []) {
+  const args = Array.from(argv);
+  const result = { quiet: false, debug: false, command: null, csv: false, filename: [] };
+  while (args.length) {
+    const arg = args.shift();
+    if (result.command === null && (arg === '-q' || arg === '--quiet')) {
+      result.quiet = true;
+    } else if (result.command === null && arg === '--debug') {
+      result.debug = true;
+    } else if (result.command === null && arg.startsWith('-')) {
+      throw new Error(`unknown option: ${arg}`);
+    } else if (result.command === null) {
+      result.command = arg;
+      if (!['stats', 'listlua', 'listtokens'].includes(arg)) throw new Error(`unknown command: ${arg}`);
+    } else if (arg === '--csv' && result.command === 'stats') {
+      result.csv = true;
+    } else if (arg === '--show-line-numbers' && result.command === 'listlua') {
+      result.showLineNumbers = true;
+    } else if (arg === '--pure-lua' && result.command === 'listlua') {
+      result.pureLua = true;
+    } else if (arg.startsWith('-')) {
+      throw new Error(`unknown option: ${arg}`);
+    } else {
+      result.filename.push(arg);
+    }
+  }
+  if (result.command && result.filename.length === 0) {
+    throw new Error(`${result.command}: the following arguments are required: filename`);
+  }
+  return result;
+}
+
+function friendly(value) {
+  if (value === null || value === undefined) return '';
+  // Python's _as_friendly_string censors bytes above ASCII rather than
+  // attempting to interpret them as Unicode.
+  if (Buffer.isBuffer(value) || value instanceof Uint8Array) {
+    return Buffer.from(value).toString('latin1').replace(/[\x80-\xff]/g, '_');
+  }
+  return String(value);
+}
+
+function csvField(value) {
+  const text = friendly(value);
+  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+function statsRows(filenames, readFile = fs.readFileSync) {
+  const rows = [];
+  const errors = [];
+  for (const filename of filenames) {
+    try {
+      // Python's stats accepts .p8 and .p8.png.  PNG transport is deliberately
+      // left to the async file API for now; this sync CLI slice handles .p8.
+      if (!filename.endsWith('.p8')) throw new Error('filename must end in .p8 (use mainAsync for .p8.png)');
+      const source = readFile(filename);
+      rows.push({ filename, source, stats: cartridgeStats(source) });
+    } catch (error) {
+      errors.push({ filename, error });
+    }
+  }
+  return { rows, errors };
+}
+
+function formatStats(rows, csv = false) {
+  if (csv) {
+    const output = [['Filename', 'Title', 'Byline', 'Code Version', 'Char Count',
+      'Token Count', 'Line Count', 'Compressed Code Size']];
+    for (const { filename, stats } of rows) {
+      output.push([path.basename(filename), stats.title, stats.byline, stats.version,
+        stats.characterCount, stats.tokenCount, stats.lineCount, stats.compressedSize]);
+    }
+    return `${output.map((row) => row.map(csvField).join(',')).join('\r\n')}\r\n`;
+  }
+  return rows.map(({ filename, stats }) => {
+    const title = friendly(stats.title);
+    const byline = friendly(stats.byline);
+    const heading = title ? `${title} (${path.basename(filename)})` : path.basename(filename);
+    return `${heading}\n${byline ? `${byline}\n` : ''}- version: ${stats.version}\n` +
+      `- lines: ${stats.lineCount}\n- chars: ${stats.characterCount}\n` +
+      `- tokens: ${stats.tokenCount}\n- compressed chars: ${stats.compressedSize}\n`;
+  }).join('\n') + (rows.length ? '\n' : '');
+}
+
+function runStats(args, io = {}) {
+  const write = io.write || ((text) => process.stdout.write(text));
+  const error = io.error || ((text) => process.stderr.write(text));
+  const { rows, errors } = statsRows(args.filename, io.readFile || fs.readFileSync);
+  for (const item of errors) error(`${item.filename}: ${item.error.message}\n${item.filename}: could not load cart\n`);
+  if (rows.length) write(formatStats(rows, args.csv));
+  return errors.length && args.filename.length === 1 ? 1 : 0;
+}
+
+function runListing(args, io = {}) {
+  const write = io.write || ((text) => process.stdout.write(text));
+  const error = io.error || ((text) => process.stderr.write(text));
+  const { rows, errors } = statsRows(args.filename, io.readFile || fs.readFileSync);
+  for (const item of errors) error(`${item.filename}: ${item.error.message}\n${item.filename}: could not load cart\n`);
+  for (const { filename, source } of rows) {
+    if (args.command === 'listlua') write((args.filename.length > 1 ? `=== ${filename} ===\n` : '') +
+      listLua(source, { pure: args.pureLua, showLineNumbers: args.showLineNumbers }));
+    else write((args.filename.length > 1 ? `=== ${filename} ===\n` : '') + listTokens(source));
+  }
+  return errors.length && args.filename.length === 1 ? 1 : 0;
+}
+
+async function asyncStatsRows(filenames, readFile = fs.promises.readFile) {
+  const rows = [], errors = [];
+  for (const filename of filenames) {
+    try {
+      const bytes = await readFile(filename);
+      let stats;
+      if (filename.endsWith('.p8')) stats = cartridgeStats(bytes);
+      else if (filename.endsWith('.p8.png')) {
+        const { cartridge } = await readP8Png(bytes);
+        const lua = require('./picotool').decodeP8scii(cartridge.code.code.slice(0, cartridge.code.codeLength));
+        stats = cartridgeStats({ format: 'p8', version: cartridge.version, sections: { lua: [lua] } });
+      } else throw new Error('filename must end in .p8 or .p8.png');
+      rows.push({ filename, stats });
+    } catch (error) { errors.push({ filename, error }); }
+  }
+  return { rows, errors };
+}
+
+async function mainAsync(argv = process.argv.slice(2), io = {}) {
+  try {
+    const args = parseArgs(argv);
+    if (args.command !== 'stats') return main(argv, io);
+    const write = io.write || ((text) => process.stdout.write(text));
+    const error = io.error || ((text) => process.stderr.write(text));
+    const { rows, errors } = await asyncStatsRows(args.filename, io.readFile || fs.promises.readFile);
+    for (const item of errors) error(`${item.filename}: ${item.error.message}\n${item.filename}: could not load cart\n`);
+    if (rows.length) write(formatStats(rows, args.csv));
+    return errors.length && args.filename.length === 1 ? 1 : 0;
+  } catch (error) {
+    (io.error || ((text) => process.stderr.write(text)))(`picotool: ${error.message}\n`);
+    return 2;
+  }
+}
+
+function main(argv = process.argv.slice(2), io = {}) {
+  try {
+    const args = parseArgs(argv);
+    if (!args.command) return 1;
+    if (args.command === 'stats') return runStats(args, io);
+    if (args.command === 'listlua' || args.command === 'listtokens') return runListing(args, io);
+    return 1;
+  } catch (error) {
+    (io.error || ((text) => process.stderr.write(text)))(`picotool: ${error.message}\n`);
+    return 2;
+  }
+}
+
+module.exports = Object.freeze({ asyncStatsRows, friendly, formatStats, main, mainAsync, parseArgs, runListing, runStats, statsRows });

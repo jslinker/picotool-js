@@ -5,15 +5,18 @@
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "browser": "src/browser.js",
+  "bin": { "p8tool": "tools/p8tool.cjs" },
   "files": [
     "src/",
+    "tools/p8tool.cjs",
     "LICENSE",
     "README.md"
   ],
   "license": "MIT",
   "scripts": {
-    "test": "node tools/file-api-test.cjs && node tools/token-model-test.cjs && node tools/check-parity.cjs",
+    "test": "node tools/file-api-test.cjs && node tools/token-model-test.cjs && node tools/cli-test.cjs && node tools/check-parity.cjs",
     "test:file-api": "node tools/file-api-test.cjs",
+    "test:cli": "node tools/cli-test.cjs",
     "test:token-model": "node tools/token-model-test.cjs",
     "test:parity": "node tools/check-parity.cjs"
   },

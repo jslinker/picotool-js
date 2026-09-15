@@ -67,6 +67,18 @@ console.log(token.code);                          // 0x10.8
 console.log(token.value);                         // 16.5
 ```
 
+### CLI progress
+
+The Node package exposes `p8tool` for `stats`, `listlua`, and `listtokens`. It accepts multiple cartridge paths and continues after a load failure. `stats --csv` emits the same columns and CRLF row endings as Python's CSV writer. PNG cartridge statistics use the asynchronous PNG transport:
+
+```sh
+p8tool stats game.p8 game.p8.png
+p8tool stats --csv game.p8
+p8tool listlua --show-line-numbers game.p8
+```
+
+Other commands and overwrite prompting remain on the parity checklist.
+
 The implemented compatibility scope is the structural parser and Node-based echo, token-minifying, token-formatting, AST-echoing, AST-minifying, and AST-formatting writers for text `.p8` cartridges; decoded Gfx, Gff, Map, Music, and Sfx memory APIs; empty-cartridge creation and arbitrary cartridge-memory writes; `.p8.png` reading, writing, hidden-data encoding, and Lua decompression; filename-selected `fromFile()`/`toFile()` cartridge I/O; Pure Lua shorthand conversion; cartridge stats, token listings, and compression; section-source builds; `require()` bundling; and single-level `.lua`/`.p8`/`.p8.png` includes. The Node parity command compares these outputs directly with Python picotool, including complete writer output bytes, diagnostics, and pixel embedding at every cartridge memory boundary.
 
 The complete list of remaining and intentionally excluded behavior is maintained in [PARITY.md](PARITY.md). The main exclusions are:

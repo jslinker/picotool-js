@@ -14,7 +14,7 @@ The supported JavaScript behavior is checked by running Node and Python over the
 
 - Match multi-file headings, error continuation, argument parsing, and exit codes.
 - Match overwrite prompting and the filesystem wrappers for `writep8`, `luamin`, and `luafmt`.
-- Match `stats` table and CSV presentation. The underlying statistics already match.
+- Extend the `p8tool` entry point beyond the implemented `stats`, `listlua`, and `listtokens` slices; check remaining PNG listing, text/CSV presentation and argument edge cases against Python.
 - Add `printast` after the public AST model exists.
 
 ### Broken or unavailable upstream behavior
