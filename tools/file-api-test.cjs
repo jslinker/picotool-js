@@ -34,6 +34,22 @@ async function main() {
     assert.equal((await picotool.fromFile(textPath)).sections.lua.join(''), 'print(42)\n');
     assert.throws(() => picotool.formatForFilename('game.txt'), (error) =>
       error instanceof picotool.UnrecognizedFileType && error.filename === 'game.txt');
+
+    const game = picotool.Game.make_empty_game('empty.p8', 33);
+    assert.equal(game.filename, 'empty.p8');
+    assert.equal(game.version, 33);
+    assert.equal(game.compressed_size, null);
+    assert.equal(typeof game.get_compressed_size(), 'number');
+    game.lua.update_from_lines(['x=1\n']);
+    game.write_cart_data([0x5a], 0x3000);
+    assert.equal(game.gff._data[0], 0x5a);
+    await game.to_p8_file(textPath);
+    const loadedGame = await picotool.Game.from_p8_file(textPath);
+    assert(loadedGame instanceof picotool.Game);
+    assert.equal(loadedGame.lua.to_lines().join(''), 'x=1\n');
+    assert.equal(loadedGame.gff._data[0], 0x5a);
+    await picotool.toFile(loadedGame, pngPath);
+    assert.equal((await picotool.Game.fromFile(pngPath)).lua.toLines().join(''), 'x=1\n');
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

@@ -93,3 +93,39 @@ export function toBytes(cartridge: ParsedP8 | any, filename: string,
   options?: CartridgeFileOptions): Promise<Uint8Array>;
 export function toFile(cartridge: ParsedP8 | any, filename: string,
   options?: CartridgeFileOptions): Promise<void>;
+export class LuaSource {
+  constructor(code?: Uint8Array | string, version?: number);
+  version: number;
+  code: Uint8Array;
+  static fromLines(lines: Iterable<string>, version?: number): LuaSource;
+  updateFromLines(lines: Iterable<string>): this;
+  update_from_lines(lines: Iterable<string>): this;
+  toBytes(): Uint8Array;
+  toLines(): string[];
+  to_lines(): string[];
+}
+export class Game {
+  constructor(filename?: string | null, compressedSize?: number | null);
+  filename: string | null;
+  compressedSize: number | null;
+  compressed_size: number | null;
+  lua: LuaSource | null;
+  gfx: any; gff: any; map: any; sfx: any; music: any; label: any;
+  version: number | null;
+  static makeEmptyGame(filename?: string | null, version?: number): Game;
+  static make_empty_game(filename?: string | null, version?: number): Game;
+  static fromCartridge(cartridge: any, filename?: string | null): Game;
+  static fromFile(filename: string): Promise<Game>;
+  static from_file(filename: string): Promise<Game>;
+  static fromP8File(filename: string): Promise<Game>;
+  static from_p8_file(filename: string): Promise<Game>;
+  getCompressedSize(): number;
+  get_compressed_size(): number;
+  writeCartData(data: Uint8Array | number[], startAddress?: number): this;
+  write_cart_data(data: Uint8Array | number[], startAddress?: number): this;
+  toCartridge(format?: 'p8' | 'p8.png'): any;
+  toFile(filename: string, options?: CartridgeFileOptions): Promise<void>;
+  to_file(filename: string, options?: CartridgeFileOptions): Promise<void>;
+  toP8File(filename: string, options?: CartridgeFileOptions): Promise<void>;
+  to_p8_file(filename: string, options?: CartridgeFileOptions): Promise<void>;
+}

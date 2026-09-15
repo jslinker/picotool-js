@@ -4,12 +4,6 @@ The supported JavaScript behavior is checked by running Node and Python over the
 
 ## Remaining parity items
 
-### Python-shaped Game API
-
-- Expose a `Game` class with Python-compatible fields and factories.
-- Add instance forms of empty-game creation, compressed-size calculation, and cartridge-memory writes. Equivalent JavaScript functions already exist.
-- Resolve the `Game.from_p8_file()` and `Game.to_p8_file()` calls in upstream tests. Those methods are absent from the vendored Python revision.
-
 ### Public lexer token model
 
 - Add Python-compatible token classes such as `TokName`, `TokString`, `TokNumber`, and `TokSymbol`.
@@ -47,4 +41,4 @@ The supported JavaScript behavior is checked by running Node and Python over the
 
 ## Completed output parity
 
-The parity harness currently covers text parsing and section serialization; all Lua writer modes; lexer and parser corpora; diagnostics; builds and includes; `require()` bundling; Pure Lua output; listings and token listings; statistics and compression; cartridge-memory writes; PNG decoding, embedding, writing, round trips, and PNG includes. The Node API also selects `.p8` and `.p8.png` transports by filename through `fromFile()` and `toFile()`, preserves an existing PNG label on overwrite, and reports unsupported extensions with a dedicated error.
+The parity harness currently covers text parsing and section serialization; all Lua writer modes; lexer and parser corpora; diagnostics; builds and includes; `require()` bundling; Pure Lua output; listings and token listings; statistics and compression; cartridge-memory writes; PNG decoding, embedding, writing, round trips, and PNG includes. The Node API also selects `.p8` and `.p8.png` transports by filename through `fromFile()` and `toFile()`, preserves an existing PNG label on overwrite, and reports unsupported extensions with a dedicated error. A Python-shaped `Game` class exposes the section fields, empty-game factory, compressed-size calculation, memory writes, and file methods in both camelCase and compatibility spellings.

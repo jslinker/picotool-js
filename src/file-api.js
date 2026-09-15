@@ -61,6 +61,7 @@ async function labelBytesFor(filename, options) {
 
 async function toBytes(cartridge, filename, options = {}) {
   const format = formatForFilename(filename);
+  if (typeof cartridge?.toCartridge === 'function') cartridge = cartridge.toCartridge(format);
   if (format === 'p8') return writeP8(cartridge?.format === 'p8' ? cartridge : p8FromCartridge(cartridge), options);
   const labelPng = await labelBytesFor(filename, options);
   if (cartridge?.format === 'p8') return writeP8PngFromP8(cartridge, labelPng, options);

@@ -37,6 +37,23 @@ await picotool.toFile(cartridge, 'game.p8.png', {
 
 `fromBytes()` and `toBytes()` provide the same filename-selected behavior without performing the final cartridge read or write. Lower-level callers can use `readP8Png()`, `writeP8PngFromP8()`, and `writeP8Png()` directly. Use `processP8IncludesAsync()` when includes may contain `.p8.png` files.
 
+### Game compatibility API
+
+`Game` provides the mutable, section-oriented shape used by Python picotool. JavaScript-style names and Python compatibility aliases are both available:
+
+```js
+const game = picotool.Game.makeEmptyGame('new-game.p8');
+game.lua.updateFromLines(['print("hello")\n']);
+game.writeCartData([0x80, 0x01], 0x3000);
+
+console.log(game.getCompressedSize());
+await game.toFile('new-game.p8');
+
+const loaded = await picotool.Game.fromFile('new-game.p8');
+```
+
+The equivalent `make_empty_game()`, `update_from_lines()`, `write_cart_data()`, `get_compressed_size()`, `from_p8_file()`, and `to_p8_file()` spellings ease migration of code written against the Python API.
+
 The implemented compatibility scope is the structural parser and Node-based echo, token-minifying, token-formatting, AST-echoing, AST-minifying, and AST-formatting writers for text `.p8` cartridges; decoded Gfx, Gff, Map, Music, and Sfx memory APIs; empty-cartridge creation and arbitrary cartridge-memory writes; `.p8.png` reading, writing, hidden-data encoding, and Lua decompression; filename-selected `fromFile()`/`toFile()` cartridge I/O; Pure Lua shorthand conversion; cartridge stats, token listings, and compression; section-source builds; `require()` bundling; and single-level `.lua`/`.p8`/`.p8.png` includes. The Node parity command compares these outputs directly with Python picotool, including complete writer output bytes, diagnostics, and pixel embedding at every cartridge memory boundary.
 
 The complete list of remaining and intentionally excluded behavior is maintained in [PARITY.md](PARITY.md). The main exclusions are:

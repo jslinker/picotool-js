@@ -6,4 +6,5 @@ module.exports = Object.freeze({
   ...require('./p8png'),
   ...require('./png-transport'),
   ...require('./cartridge'),
+  ...require('./game'),
 });
