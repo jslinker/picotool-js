@@ -70,10 +70,44 @@ try {
 } finally { rmSync(testDirectory, { recursive: true, force: true }); }
 
 const png = resolve(__dirname, '../../../vendor/picotool/tests/testdata/test_cart.p8.png');
+const pngOutput = png.replace(/\.p8\.png$/, '_fmt.p8.png');
 mainAsync(['stats', png], {
   write: (text) => { out += text; }, error: (text) => { err += text; },
 }).then((status) => {
   assert.strictEqual(status, 0);
   assert.match(out, /test_cart\.p8\.png/);
-  console.log('cli tests passed');
+  let pngListing = '';
+  return mainAsync(['listlua', png], {
+    write: (text) => { pngListing += text; }, error: (text) => { throw new Error(text); },
+  }).then((pngStatus) => {
+    assert.strictEqual(pngStatus, 0);
+    assert.match(pngListing, /print/);
+    pngListing = '';
+    return mainAsync(['listtokens', png], {
+      write: (text) => { pngListing += text; }, error: (text) => { throw new Error(text); },
+    });
+  }).then((pngStatus) => {
+    assert.strictEqual(pngStatus, 0);
+    assert.match(pngListing, /<0:/);
+    return mainAsync(['writep8', png], {
+      writeFile: (filename, bytes) => {
+        assert.strictEqual(filename, pngOutput);
+        assert.ok(Buffer.from(bytes).length > 100);
+      },
+      write: (text) => { assert.match(text, /_fmt\.p8\.png/); },
+      error: (text) => { throw new Error(text); },
+    });
+  }).then((pngStatus) => {
+    assert.strictEqual(pngStatus, 0);
+    return Promise.all(['luamin', 'luafmt'].map((command) => mainAsync([command, png], {
+      writeFile: (filename, bytes) => {
+        assert.strictEqual(filename, pngOutput);
+        assert.ok(Buffer.from(bytes).length > 100);
+      },
+      write: () => {}, error: (text) => { throw new Error(text); },
+    })));
+  }).then((statuses) => {
+    assert.deepStrictEqual(statuses, [0, 0]);
+    console.log('cli tests passed');
+  });
 }).catch((error) => { throw error; });

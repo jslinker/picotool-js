@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const { cartridgeStats } = require('./stats');
 const { listLua, listTokens } = require('./listing');
-const { readP8Png } = require('./png-transport');
+const { readP8Png, writeP8Png } = require('./png-transport');
 const { writeP8 } = require('./p8writer');
 
 function parseArgs(argv = []) {
@@ -188,9 +188,80 @@ async function asyncStatsRows(filenames, readFile = fs.promises.readFile) {
   return { rows, errors };
 }
 
+function p8FromPngCartridge(cartridge) {
+  const luaBytes = cartridge.code.code.slice(0, cartridge.code.codeLength);
+  const lua = require('./picotool').decodeP8scii(luaBytes);
+  return {
+    format: 'p8', version: cartridge.version,
+    sections: {
+      lua: lua.match(/[^\n]*\n|[^\n]+$/g) || [],
+      gfx: cartridge.gfx.toLines(), gff: cartridge.gff.toLines(),
+      map: cartridge.map.toLines(), sfx: cartridge.sfx.toLines(),
+      music: cartridge.music.toLines(),
+    },
+  };
+}
+
+async function asyncListing(args, io = {}) {
+  const write = io.write || ((text) => process.stdout.write(text));
+  const error = io.error || ((text) => process.stderr.write(text));
+  const read = io.readFile || fs.promises.readFile;
+  const rows = [], errors = [];
+  for (const filename of args.filename) {
+    try {
+      if (filename.endsWith('.p8')) rows.push({ filename, source: await read(filename) });
+      else if (filename.endsWith('.p8.png')) {
+        const { cartridge } = await readP8Png(await read(filename));
+        rows.push({ filename, source: p8FromPngCartridge(cartridge) });
+      } else throw new Error('filename must end in .p8 or .p8.png');
+    } catch (exception) { errors.push({ filename, error: exception }); }
+  }
+  for (const item of errors) error(`${item.filename}: ${item.error.message}\n${item.filename}: could not load cart\n`);
+  for (const { filename, source } of rows) {
+    const prefix = args.filename.length > 1 ? `=== ${filename} ===\n` : '';
+    write(prefix + (args.command === 'listlua'
+      ? listLua(source, { pure: args.pureLua, showLineNumbers: args.showLineNumbers })
+      : listTokens(source)));
+  }
+  return errors.length && args.filename.length === 1 ? 1 : 0;
+}
+
+async function asyncWrite(args, io = {}) {
+  const write = io.write || ((text) => process.stdout.write(text));
+  const error = io.error || ((text) => process.stderr.write(text));
+  const read = io.readFile || fs.promises.readFile;
+  const writeFile = io.writeFile || fs.promises.writeFile;
+  let failed = false;
+  for (const filename of args.filename) {
+    try {
+      const input = await read(filename);
+      const output = outputName(filename, args.command, args.overwrite);
+      if (filename.endsWith('.p8')) {
+        const parsed = require('./picotool').parseP8(input);
+        const luaWriter = args.command === 'luamin' ? 'minify' : args.command === 'luafmt' ? 'format-token' : undefined;
+        await writeFile(output, writeP8(parsed, { luaWriter, minifyOptions: { keepAllNames: args.keepAllNames }, formatOptions: { indentwidth: args.indentwidth ?? 2 } }));
+      } else if (filename.endsWith('.p8.png')) {
+        const { cartridge } = await readP8Png(input);
+        let luaBytes = cartridge.code.code.slice(0, cartridge.code.codeLength);
+        if (args.command !== 'writep8') {
+          const parsed = p8FromPngCartridge(cartridge);
+          const luaWriter = args.command === 'luamin' ? 'minify' : 'format-token';
+          const rewritten = require('./picotool').parseP8(writeP8(parsed, { luaWriter, minifyOptions: { keepAllNames: args.keepAllNames }, formatOptions: { indentwidth: args.indentwidth ?? 2 } }));
+          luaBytes = require('./picotool').encodeP8scii((rewritten.sections.lua || []).join(''));
+        }
+        await writeFile(output, await writeP8Png(cartridge, input, luaBytes));
+      } else throw new Error('filename must end in .p8 or .p8.png');
+      write(`${filename} -> ${output}\n`);
+    } catch (exception) { failed = true; error(`${filename}: ${exception.message}\n`); }
+  }
+  return failed ? 1 : 0;
+}
+
 async function mainAsync(argv = process.argv.slice(2), io = {}) {
   try {
     const args = parseArgs(argv);
+    if (['listlua', 'listtokens'].includes(args.command) && args.filename.some((filename) => filename.endsWith('.p8.png'))) return asyncListing(args, io);
+    if (['writep8', 'luamin', 'luafmt'].includes(args.command) && args.filename.some((filename) => filename.endsWith('.p8.png'))) return asyncWrite(args, io);
     if (args.command !== 'stats') return main(argv, io);
     const write = io.write || ((text) => process.stdout.write(text));
     const error = io.error || ((text) => process.stderr.write(text));

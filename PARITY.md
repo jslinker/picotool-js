@@ -14,7 +14,7 @@ The supported JavaScript behavior is checked by running Node and Python over the
 
 - Match multi-file headings, error continuation, argument parsing, and exit codes.
 - Match overwrite prompting and the filesystem wrappers for `writep8`, `luamin`, and `luafmt`.
-- Extend the `p8tool` entry point beyond the implemented text-cart `stats`, `listlua`, `listrawlua`, `listtokens`, `writep8`, `luamin`, and `luafmt` slices; check PNG listing/writing, output naming, prompting, presentation and argument edge cases against Python.
+- Extend the `p8tool` entry point beyond the implemented `stats`, `listlua`, `listtokens`, `writep8`, `luamin`, and `luafmt` slices for text and PNG carts; raw listing is text-only. Check output naming, prompting, presentation and argument edge cases against Python.
 - Add `printast` after the public AST model exists.
 
 ### Broken or unavailable upstream behavior
