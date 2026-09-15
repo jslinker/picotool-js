@@ -67,6 +67,14 @@ console.log(token.code);                          // 0x10.8
 console.log(token.value);                         // 16.5
 ```
 
+### Lua search
+
+`findLua()` searches validated Lua lines and returns `filename:line:code` matches or one filename with `listFiles: true`. This implements the intended `luafind` behavior rather than Python picotool's current Python 3 string-regex/bytes-line `TypeError`:
+
+```js
+picotool.findLua(cartridge, 'print', { filename: 'game.p8' });
+```
+
 ### CLI progress
 
 The Node package exposes `p8tool` for `stats`, `listlua`, `listrawlua`, `listtokens`, `writep8`, `luamin`, and `luafmt`. It accepts multiple cartridge paths and continues after a load failure. `stats --csv` emits the same columns and CRLF row endings as Python's CSV writer. PNG cartridge statistics use the asynchronous PNG transport; writing and listing commands currently require text `.p8` carts:

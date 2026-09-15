@@ -157,3 +157,5 @@ export function analyzeLua(source: string | Uint8Array, filename?: string): {
   characterCount: number; tokenCount: number; warnings: string[];
 };
 export function echoLua(source: string | Uint8Array): Uint8Array;
+export function findLua(source: ParsedP8 | string | Uint8Array | ArrayBuffer,
+  pattern: string | RegExp, options?: { filename?: string; listFiles?: boolean }): string;
