@@ -7,7 +7,7 @@ The supported JavaScript behavior is checked by running Node and Python over the
 ### Public parser AST model
 
 - Add Python-compatible AST node classes, fields, and token ranges.
-- Support AST traversal and mutation through equivalents of `BaseASTWalker` and its node handlers.
+- Integrate the implemented `BaseASTWalker` dispatch with a complete parser AST, including all node handlers and token-valued fields, then verify traversal and mutation parity.
 - Add AST debug output for `printast`. Observable formatter and minifier output already matches.
 
 ### CLI orchestration and presentation

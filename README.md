@@ -75,6 +75,8 @@ console.log(token.value);                         // 16.5
 picotool.findLua(cartridge, 'print', { filename: 'game.p8' });
 ```
 
+`BaseASTWalker` is available for handler-based traversal: subclasses can override `_walk_<NodeType>()`, `_walk_token()`, or `_walk_value()`, and `walk()` yields results from the root. Its integration with the full public parser AST remains in progress.
+
 ### CLI progress
 
 The Node package exposes `p8tool` for `stats`, `listlua`, `listrawlua`, `listtokens`, `writep8`, `luamin`, `luafmt`, and the intended `luafind` search behavior. It accepts multiple cartridge paths and continues after a load failure. `stats --csv` emits the same columns and CRLF row endings as Python's CSV writer. PNG cartridge statistics, parsed listings, writer commands, and Lua search use the asynchronous PNG transport; raw Lua listing currently requires text `.p8` carts:

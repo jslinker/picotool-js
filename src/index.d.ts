@@ -160,3 +160,14 @@ export function analyzeLua(source: string | Uint8Array, filename?: string): {
 export function echoLua(source: string | Uint8Array): Uint8Array;
 export function findLua(source: ParsedP8 | string | Uint8Array | ArrayBuffer,
   pattern: string | RegExp, options?: { filename?: string; listFiles?: boolean }): string;
+export class BaseASTWalker {
+  constructor(tokens: Token[], root: any, args?: Record<string, unknown>);
+  protected _tokens: Token[];
+  protected _root: any;
+  protected _args: Record<string, unknown>;
+  protected _walk(node: any): IterableIterator<unknown>;
+  protected _walk_node(node: any): IterableIterator<unknown>;
+  protected _walk_token(token: Token): IterableIterator<unknown>;
+  protected _walk_value(value: unknown): IterableIterator<unknown>;
+  walk(): IterableIterator<unknown>;
+}
