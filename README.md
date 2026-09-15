@@ -77,7 +77,7 @@ picotool.findLua(cartridge, 'print', { filename: 'game.p8' });
 
 ### CLI progress
 
-The Node package exposes `p8tool` for `stats`, `listlua`, `listrawlua`, `listtokens`, `writep8`, `luamin`, and `luafmt`. It accepts multiple cartridge paths and continues after a load failure. `stats --csv` emits the same columns and CRLF row endings as Python's CSV writer. PNG cartridge statistics, parsed listings, and writer commands use the asynchronous PNG transport; raw Lua listing currently requires text `.p8` carts:
+The Node package exposes `p8tool` for `stats`, `listlua`, `listrawlua`, `listtokens`, `writep8`, `luamin`, `luafmt`, and the intended `luafind` search behavior. It accepts multiple cartridge paths and continues after a load failure. `stats --csv` emits the same columns and CRLF row endings as Python's CSV writer. PNG cartridge statistics, parsed listings, writer commands, and Lua search use the asynchronous PNG transport; raw Lua listing currently requires text `.p8` carts:
 
 ```sh
 p8tool stats game.p8 game.p8.png
@@ -85,6 +85,7 @@ p8tool stats --csv game.p8
 p8tool listlua --show-line-numbers game.p8
 p8tool luafmt --indentwidth 2 game.p8
 p8tool listtokens game.p8.png
+p8tool luafind --listfiles 'print' game.p8 game.p8.png
 ```
 
 Other commands and overwrite prompting remain on the parity checklist.

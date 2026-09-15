@@ -46,6 +46,20 @@ assert.match(listing, /print/);
 listing = '';
 assert.strictEqual(main(['listtokens', 'one.p8'], { readFile: read, write: (text) => { listing += text; } }), 0);
 assert.match(listing, /<0:/);
+let found = '';
+assert.strictEqual(main(['luafind', 'print', 'one.p8', 'two.p8'], {
+  readFile: read, write: (text) => { found += text; }, error: (text) => { throw new Error(text); },
+}), 0);
+assert.match(found, /one\.p8:3:print\("hello"\)/);
+assert.match(found, /two\.p8:3:print\("hello"\)/);
+found = '';
+assert.strictEqual(main(['luafind', '--listfiles', 'print', 'one.p8', 'two.p8'], {
+  readFile: read, write: (text) => { found += text; }, error: (text) => { throw new Error(text); },
+}), 0);
+assert.strictEqual(found, 'one.p8\ntwo.p8\n');
+let usage = '';
+assert.strictEqual(main(['luafind', 'print'], { write: () => {}, error: (text) => { usage += text; } }), 1);
+assert.match(usage, /Usage: p8tool luafind/);
 const invalidLua = `${cart.split('__lua__\n')[0]}__lua__\nnot valid @@@\n`;
 const rawFiles = (filename) => filename === 'bad-lua.p8' ? Buffer.from(invalidLua) : read(filename);
 listing = '';

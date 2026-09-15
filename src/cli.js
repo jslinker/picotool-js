@@ -7,6 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const { cartridgeStats } = require('./stats');
 const { listLua, listTokens } = require('./listing');
+const { findLua } = require('./lua-find');
 const { readP8Png, writeP8Png } = require('./png-transport');
 const { writeP8 } = require('./p8writer');
 
@@ -23,7 +24,7 @@ function parseArgs(argv = []) {
       throw new Error(`unknown option: ${arg}`);
     } else if (result.command === null) {
       result.command = arg;
-      if (!['stats', 'listlua', 'listtokens', 'listrawlua', 'writep8', 'luamin', 'luafmt'].includes(arg)) throw new Error(`unknown command: ${arg}`);
+      if (!['stats', 'listlua', 'listtokens', 'listrawlua', 'writep8', 'luamin', 'luafmt', 'luafind'].includes(arg)) throw new Error(`unknown command: ${arg}`);
     } else if (arg === '--csv' && result.command === 'stats') {
       result.csv = true;
     } else if (arg === '--show-line-numbers' && result.command === 'listlua') {
@@ -39,6 +40,8 @@ function parseArgs(argv = []) {
       if (!Number.isInteger(result.indentwidth)) throw new Error('--indentwidth must be an integer');
     } else if (arg === '--keep-all-names' && result.command === 'luamin') {
       result.keepAllNames = true;
+    } else if (arg === '--listfiles' && result.command === 'luafind') {
+      result.listFiles = true;
     } else if (arg.startsWith('-')) {
       throw new Error(`unknown option: ${arg}`);
     } else {
@@ -140,6 +143,33 @@ function runListing(args, io = {}) {
     } else write((args.filename.length > 1 ? `=== ${filename} ===\n` : '') + listTokens(source));
   }
   return errors.length && args.filename.length === 1 ? 1 : 0;
+}
+
+function runLuaFind(args, io = {}) {
+  const write = io.write || ((text) => process.stdout.write(text));
+  const error = io.error || ((text) => process.stderr.write(text));
+  const [pattern, ...filenames] = args.filename;
+  if (!pattern || filenames.length === 0) {
+    error('Usage: p8tool luafind <pattern> <filename> [<filename>...]\n');
+    return 1;
+  }
+  let expression;
+  try { expression = new RegExp(pattern); } catch (exception) {
+    error(`luafind: ${exception.message}\n`);
+    return 1;
+  }
+  let failed = false;
+  for (const filename of filenames) {
+    try {
+      if (!filename.endsWith('.p8')) throw new Error('filename must end in .p8 (PNG search is async)');
+      const source = require('./picotool').parseP8((io.readFile || fs.readFileSync)(filename));
+      write(findLua(source, expression, { filename, listFiles: args.listFiles }));
+    } catch (exception) {
+      failed = true;
+      error(`${filename}: ${exception.message}\n${filename}: could not load cart\n`);
+    }
+  }
+  return failed && filenames.length === 1 ? 1 : 0;
 }
 
 function outputName(filename, command, overwrite) {
@@ -257,11 +287,42 @@ async function asyncWrite(args, io = {}) {
   return failed ? 1 : 0;
 }
 
+async function asyncLuaFind(args, io = {}) {
+  const write = io.write || ((text) => process.stdout.write(text));
+  const error = io.error || ((text) => process.stderr.write(text));
+  const [pattern, ...filenames] = args.filename;
+  if (!pattern || filenames.length === 0) {
+    error('Usage: p8tool luafind <pattern> <filename> [<filename>...]\n');
+    return 1;
+  }
+  let expression;
+  try { expression = new RegExp(pattern); } catch (exception) {
+    error(`luafind: ${exception.message}\n`);
+    return 1;
+  }
+  let failed = false;
+  const read = io.readFile || fs.promises.readFile;
+  for (const filename of filenames) {
+    try {
+      const input = await read(filename);
+      const source = filename.endsWith('.p8.png')
+        ? p8FromPngCartridge((await readP8Png(input)).cartridge)
+        : require('./picotool').parseP8(input);
+      write(findLua(source, expression, { filename, listFiles: args.listFiles }));
+    } catch (exception) {
+      failed = true;
+      error(`${filename}: ${exception.message}\n${filename}: could not load cart\n`);
+    }
+  }
+  return failed && filenames.length === 1 ? 1 : 0;
+}
+
 async function mainAsync(argv = process.argv.slice(2), io = {}) {
   try {
     const args = parseArgs(argv);
     if (['listlua', 'listtokens'].includes(args.command) && args.filename.some((filename) => filename.endsWith('.p8.png'))) return asyncListing(args, io);
     if (['writep8', 'luamin', 'luafmt'].includes(args.command) && args.filename.some((filename) => filename.endsWith('.p8.png'))) return asyncWrite(args, io);
+    if (args.command === 'luafind' && args.filename.slice(1).some((filename) => filename.endsWith('.p8.png'))) return asyncLuaFind(args, io);
     if (args.command !== 'stats') return main(argv, io);
     const write = io.write || ((text) => process.stdout.write(text));
     const error = io.error || ((text) => process.stderr.write(text));
@@ -281,6 +342,7 @@ function main(argv = process.argv.slice(2), io = {}) {
     if (!args.command) return 1;
     if (args.command === 'stats') return runStats(args, io);
     if (['listlua', 'listtokens', 'listrawlua'].includes(args.command)) return runListing(args, io);
+    if (args.command === 'luafind') return runLuaFind(args, io);
     if (['writep8', 'luamin', 'luafmt'].includes(args.command)) return runWrite(args, io);
     return 1;
   } catch (error) {
