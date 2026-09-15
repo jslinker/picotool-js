@@ -26,3 +26,8 @@ assert.equal(string.code, '"changed"');
 assert(!new p.TokName('x').equals(new p.TokSymbol('x')));
 assert(new p.TokSymbol('+').matches(new p.TokSymbol('+')));
 assert(!new p.TokSymbol('+').matches('+'));
+
+assert.equal(tokens[0].toPythonRepr(), "TokKeyword<b'local', line 0 char 0>");
+assert.equal(new p.TokString('a\n', 2, 3).toPythonRepr(), "TokString<b'a\\n', line 2 char 3>");
+assert.equal(new p.TokName("can't", 0, 5).toPythonRepr(), 'TokName<b"can\'t", line 0 char 5>');
+assert.equal(p.pythonBytesRepr('\x00\xff'), "b'\\x00\\xff'");

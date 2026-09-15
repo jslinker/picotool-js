@@ -143,6 +143,7 @@ export class Token {
   readonly length: number;
   equals(other: unknown): boolean;
   matches(other: unknown): boolean;
+  toPythonRepr(): string;
 }
 export class TokSpace extends Token {}
 export class TokNewline extends Token {}
@@ -154,6 +155,7 @@ export class TokLabel extends Token {}
 export class TokKeyword extends Token {}
 export class TokSymbol extends Token {}
 export function tokenizeLua(source: string | Uint8Array): Token[];
+export function pythonBytesRepr(value: string | Uint8Array): string;
 export function analyzeLua(source: string | Uint8Array, filename?: string): {
   characterCount: number; tokenCount: number; warnings: string[];
 };

@@ -9,6 +9,22 @@ function asString(value) {
   return String(value);
 }
 
+function pythonBytesRepr(value) {
+  const bytes = Buffer.from(asString(value), 'latin1');
+  const quote = bytes.includes(39) && !bytes.includes(34) ? '"' : "'";
+  let escaped = '';
+  for (const byte of bytes) {
+    if (byte === 92) escaped += '\\\\';
+    else if (byte === quote.charCodeAt(0)) escaped += `\\${quote}`;
+    else if (byte === 9) escaped += '\\t';
+    else if (byte === 10) escaped += '\\n';
+    else if (byte === 13) escaped += '\\r';
+    else if (byte >= 32 && byte <= 126) escaped += String.fromCharCode(byte);
+    else escaped += `\\x${byte.toString(16).padStart(2, '0')}`;
+  }
+  return `b${quote}${escaped}${quote}`;
+}
+
 class Token {
   constructor(data, line = null, column = null) {
     this._data = asString(data);
@@ -37,6 +53,11 @@ class Token {
   }
 
   toString() { return this.code; }
+  toPythonRepr() {
+    const line = this.line === null ? 'None' : this.line;
+    const column = this.column === null ? 'None' : this.column;
+    return `${this.constructor.name}<${pythonBytesRepr(this._data)}, line ${line} char ${column}>`;
+  }
 }
 
 function tokenClass(type, tokenName) {
@@ -127,4 +148,4 @@ function createToken(type, code, line, column) {
 }
 
 module.exports = Object.freeze({ Token, TokSpace, TokNewline, TokComment, TokString, TokNumber,
-  TokName, TokLabel, TokKeyword, TokSymbol, TOKEN_CLASSES, createToken });
+  TokName, TokLabel, TokKeyword, TokSymbol, TOKEN_CLASSES, createToken, pythonBytesRepr });

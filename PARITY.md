@@ -6,7 +6,7 @@ The supported JavaScript behavior is checked by running Node and Python over the
 
 ### Public parser AST model
 
-- Add Python-compatible AST node classes, fields, and token ranges.
+- Add Python-compatible AST node classes, fields, and token ranges. Lexer tokens now expose Python-style debug representations, but the draft AST still stores some token-valued fields as plain strings; token-aware recursive comparisons remain required before public integration.
 - Integrate the implemented `BaseASTWalker` dispatch with a complete parser AST, including all node handlers and token-valued fields, then verify traversal and mutation parity.
 - Add AST debug output for `printast`. Observable formatter and minifier output already matches.
 
