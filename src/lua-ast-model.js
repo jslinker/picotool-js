@@ -83,7 +83,7 @@ const PYTHON_FIELDS = {
   LocalAssignmentStatement: { names: 'namelist', values: 'explist' }, LocalFunctionStatement: { name: 'funcname' }, ExpUnOp: { operator: 'unop', argument: 'exp' }, ForNumericStatement: { name: 'name', start: 'exp_init', finish: 'exp_end', step: 'exp_step', body: 'block' },
   ForInStatement: { names: 'namelist', values: 'explist', body: 'block' }, FunctionStatement: { name: 'funcname', body: 'funcbody' },
   LocalFunctionStatement: { name: 'funcname', body: 'funcbody' }, BinaryExpression: { left: 'exp1', operator: 'binop', right: 'exp2' }, UnaryExpression: { operator: 'unop', argument: 'exp' },
-  NameExpression: { name: 'name' }, NumberLiteral: { value: 'value' }, StringLiteral: { value: 'value' }, TableExpression: { fields: 'fields' }, CallExpression: { callee: 'exp_prefix' },
+  NameExpression: { name: 'name' }, NumberLiteral: { value: 'value' }, StringLiteral: { value: 'value' }, TableExpression: { fields: 'fields' }, Function: { body: 'funcbody' }, FunctionExpression: { body: 'funcbody' }, CallExpression: { callee: 'exp_prefix' },
   IndexExpression: { object: 'exp_prefix', index: 'exp_index' }, MemberExpression: { object: 'exp_prefix', name: 'attr_name' },
   LabelStatement: { name: 'label' },
 };
@@ -190,7 +190,26 @@ class AstParser {
   expect(type, code) { const t = this.take(type, code); if (!t) throw new LuaAstError(`Expected ${code || type}`); return t; }
   keyword(code) { return this.take('keyword', code); }
   symbol(code) { return this.take('symbol', code); }
-  parse() { const first = this.peek(); const body = []; while (this.peek()) { if (this.symbol(';')) continue; body.push(this.statement()); } const result = node('Chunk', { body }, first, this.tokens[this.i - 1], this.source); result._start_token_pos = 0; if (!first) result._end_token_pos = 0; if (!Object.prototype.hasOwnProperty.call(result, 'body')) Object.defineProperty(result, 'body', { value: body, enumerable: false }); result.storeTokenGroups(this.allTokens); return result; }
+  parse() {
+    const first = this.peek(); const body = [];
+    while (this.peek()) {
+      if (this.symbol(';')) continue;
+      const start = this.i;
+      try { body.push(this.statement()); }
+      catch (error) {
+        // Python's _chunk stops at a token that cannot begin a statement and
+        // leaves the residual stream for callers using parser fragments.
+        const initial = this.tokens[start];
+        if (!(error instanceof LuaAstError) || (error.message !== 'Expected statement' && (initial?.type === 'name' || (initial?.type === 'keyword' && !['nil', 'true', 'false'].includes(initial.code))))) throw error;
+        this.i = start; break;
+      }
+    }
+    const result = node('Chunk', { body }, first, this.tokens[this.i - 1], this.source);
+    result._start_token_pos = 0;
+    result._end_token_pos = this.i ? this.tokens[this.i - 1].tokenPos + 1 : 0;
+    if (!Object.prototype.hasOwnProperty.call(result, 'body')) Object.defineProperty(result, 'body', { value: body, enumerable: false });
+    result.storeTokenGroups(this.allTokens); return result;
+  }
   statement() {
     let first = this.peek(); const prior = this.tokens[this.i - 1];
     if (first && !prior && first.tokenPos > 0) first = { ...first, actualTokenPos: first.tokenPos, tokenPos: 0 };
@@ -214,7 +233,7 @@ class AstParser {
       const values = this.explist(); const result = node('AssignmentStatement', { targets, values, operator: op }, first, this.tokens[this.i - 1], this.source); result.explist._start_token_pos = opToken.tokenPos + 1; return result;
     }
     this.i = mark;
-    const call = expr.type === 'ExpValue' ? expr.value : expr;
+    const call = expr.type === 'ExpValue' && expr.value instanceof Node ? expr.value : expr;
     if (!['CallExpression', 'FunctionCall', 'FunctionCallMethod'].includes(call.type)) throw new LuaAstError('Expected statement');
     const statement = node('CallStatement', { expression: call }, first, this.tokens[this.i - 1], this.source);
     return statement;
@@ -306,7 +325,7 @@ class AstParser {
     else if (value?.type === 'ExpValue' && first?.tokenPos != null && this.tokens[this.i - 2]?.tokenPos != null && first.tokenPos - this.tokens[this.i - 2].tokenPos > 1) value._start_token_pos = this.tokens[this.i - 2].tokenPos + 1;
     if (value?.type === 'ExpUnOp' && first?.tokenPos > 0) value._start_token_pos = first.tokenPos - 1;
     if (value?.type === 'ExpValue' && value.value instanceof Node && value.value.type === 'VarName') value.value._start_token_pos = value._start_token_pos;
-    const wrapped = value; let hadSuffix = false; if (value.type === 'ExpValue') value = value.value;
+    const wrapped = value; let hadSuffix = false; if (value.type === 'ExpValue' && value.value instanceof Node) value = value.value;
     while (true) { if (this.symbol('[')) { hadSuffix = true; const index = this.expression(); const end = this.expect('symbol', ']'); value = node('IndexExpression', { object: value, index }, first, end, this.source); } else if (this.symbol('.')) { hadSuffix = true; const name = this.expect('name'); value = node('MemberExpression', { object: value, name }, first, name, this.source); } else if (this.symbol(':')) { hadSuffix = true; const method = this.expect('name'); const args = this.arguments(); value = node('CallExpression', { callee: value, method, args }, first, this.tokens[this.i - 1], this.source); } else if (this.at('symbol', '(') || this.at('string') || this.at('symbol', '{')) { hadSuffix = true; const args = this.arguments(); value = node('CallExpression', { callee: value, args }, first, this.tokens[this.i - 1], this.source); } else break; }
     if (!hadSuffix) value = wrapped;
     else if (['CallExpression', 'FunctionCall'].includes(value.type)) { value._start_token_pos += 1; const startPos = preceding && first.tokenPos - preceding.tokenPos > 1 ? preceding.tokenPos + 1 : first.tokenPos; value = node('ExpValue', { value }, { ...first, tokenPos: startPos }, this.tokens[this.i - 1], this.source); }

@@ -184,12 +184,12 @@ function diffPaths(a, b, current = '$', found = [], limit = 20) {
 }
 for (const [encoded, accepted, pyEnd, pyTokenCount] of parserCorpus) {
   if (!accepted) continue;
-  corpusAccepted += 1; if (pyEnd === pyTokenCount) corpusFullPrograms += 1; else { corpusFragments += 1; continue; } const source = Buffer.from(encoded, 'base64').toString('latin1');
+  corpusAccepted += 1; if (pyEnd === pyTokenCount) corpusFullPrograms += 1; else corpusFragments += 1; const source = Buffer.from(encoded, 'base64').toString('latin1');
   let jsTree; try { jsTree = parseLua(source); } catch (_) { corpusJsFailures += 1; corpusFailureDetails.push(source.slice(0, 80)); continue; }
-  try { const jsCanon = canonJs(jsTree), pyCanon = oracle(source); assert.deepEqual(jsCanon, pyCanon); corpusExact += 1; } catch (_) { corpusMismatched += 1; corpusMismatchDetails.push({ source: source.slice(0, 80), path: firstDiff(canonJs(jsTree), oracle(source)) }); }
+  try { const jsCanon = canonJs(jsTree), pyCanon = oracle(source); assert.deepEqual(jsCanon, pyCanon); corpusExact += 1; } catch (_) { corpusMismatched += 1; corpusMismatchDetails.push({ source, pyEnd, pyTokenCount, jsEnd: jsTree.end_pos, paths: diffPaths(canonJs(jsTree), oracle(source), '$', [], 8) }); }
 }
 console.log(`vendored parser corpus: ${parserCorpus.length} total, ${corpusAccepted} accepted (${corpusFullPrograms} full programs, ${corpusFragments} fragments/residual), ${corpusExact} exact, ${corpusMismatched} mismatched, ${corpusJsFailures} JS parse failures`);
-console.log('corpus mismatch diagnostics:', corpusMismatchDetails);
+console.log('corpus mismatch diagnostics:', JSON.stringify(corpusMismatchDetails, null, 2));
 console.log('corpus JS parse-failure samples:', corpusFailureDetails);
-assert.equal(corpusMismatched, 0, 'full-program Python AST structural mismatches');
-assert.equal(corpusJsFailures, 0, 'full-program JavaScript AST parse failures');
+assert.equal(corpusMismatched, 0, 'accepted-input Python AST structural mismatches');
+assert.equal(corpusJsFailures, 0, 'accepted-input JavaScript AST parse failures');

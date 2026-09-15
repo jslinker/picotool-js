@@ -12,6 +12,11 @@ assert.equal(constructed.start_pos, 4);
 assert.equal(constructed.end_pos, 9);
 assert.equal(constructed.note, 'test');
 assert.equal(new VarargDots({ start: 2, end: 3 }).start_pos, 2);
+for (const fragment of ['nil', 'name1', '123+', 'x y']) {
+  assert.equal(parseLua(fragment).end_pos, 0, fragment);
+}
+assert.equal(parseLua('break name').end_pos, 1);
+for (const malformed of ['x=', 'foo(']) assert.throws(() => parseLua(malformed), malformed);
 
 const tree = parseLua('local x = 1\nif x > 0 then\n  print("yes")\nend\n');
 assert.equal(tree.type, 'Chunk');
