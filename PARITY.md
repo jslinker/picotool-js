@@ -7,7 +7,7 @@ The supported JavaScript behavior is checked by running Node and Python over the
 ### Public parser AST model
 
 - Public `parseLua()` exposes Python-named AST classes, fields, token spans, and token-valued fields. Its recursive Python oracle matches 15 focused programs, all 33 fully consumed programs in the vendored parser-test corpus, and upstream text-cart fixtures; token regeneration also matches on the tested carts. Python's 39 parser-test fragment/residual-input cases are classified separately and are not yet emulated as public `parseLua()` behavior.
-- Verify all `BaseASTWalker` node handlers and traversal/mutation behavior against the public AST, beyond the current generic dispatch and selected token/child mutation tests. Match remaining Python node-constructor and internal token-group representation edge cases.
+- `BaseASTWalker` now exposes Python-style named default handlers for each exported AST class, with override and nested traversal tests on parsed nodes. Verify comprehensive traversal/mutation behavior against Python beyond the selected tests, and match remaining Python node-constructor and internal token-group representation edge cases.
 
 ### CLI orchestration and presentation
 

@@ -1,6 +1,7 @@
 'use strict';
 
 const { Token } = require('./lua-token');
+const ast = require('./lua-ast-model');
 
 /** Python BaseASTWalker-compatible recursive handler dispatch. */
 class BaseASTWalker {
@@ -32,6 +33,15 @@ class BaseASTWalker {
   }
 
   *walk() { yield* this._walk(this._root); }
+}
+
+// Python installs a default handler for every parser.Node subclass. Keep the
+// same override points visible on the prototype, including rarely used nodes.
+BaseASTWalker.prototype._walk_Node = BaseASTWalker.prototype._walk_node;
+for (const [name, constructor] of Object.entries(ast)) {
+  if (typeof constructor === 'function' && constructor.prototype instanceof ast.Node) {
+    BaseASTWalker.prototype[`_walk_${name}`] = BaseASTWalker.prototype._walk_node;
+  }
 }
 
 module.exports = Object.freeze({ BaseASTWalker });

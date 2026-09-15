@@ -5,6 +5,14 @@ const assert = require('node:assert/strict');
 const { BaseASTWalker } = require('../src/lua-ast-walker');
 const { TokName } = require('../src/lua-token');
 const { parseLua } = require('../src/lua-ast-model');
+const ast = require('../src/lua-ast-model');
+
+assert.equal(typeof BaseASTWalker.prototype._walk_Node, 'function');
+for (const [name, constructor] of Object.entries(ast)) {
+  if (typeof constructor === 'function' && constructor.prototype instanceof ast.Node) {
+    assert.equal(typeof BaseASTWalker.prototype[`_walk_${name}`], 'function', `missing ${name} handler`);
+  }
+}
 
 const root = { type: 'Chunk', _fields: ['stats'], stats: [
   { type: 'VarName', _fields: ['name'], name: new TokName('x') },
@@ -27,3 +35,20 @@ class RenameWalker extends BaseASTWalker {
 }
 assert.deepEqual([...new RenameWalker([...parsed.tokens], parsed).walk()], []);
 assert.equal([...parsed.tokens].map(token => token.code).join(''), 'y=1');
+
+const nested = parseLua('local x=1\nif x then print(x) end');
+class TraceWalker extends BaseASTWalker {
+  *_walk(node) {
+    if (node instanceof ast.Node) yield `node:${node.type}`;
+    yield* super._walk(node);
+  }
+  *_walk_token(token) { yield `token:${token.code}`; }
+  *_walk_value(value) { yield `value:${String(value)}`; }
+}
+const trace = [...new TraceWalker([...nested.tokens], nested).walk()];
+assert.equal(trace[0], 'node:Chunk');
+assert.ok(trace.includes('node:StatLocalAssignment'));
+assert.ok(trace.includes('node:StatIf'));
+assert.ok(trace.includes('node:FunctionCall'));
+assert.ok(trace.includes('token:x'));
+assert.ok(trace.includes('token:1'));
