@@ -120,6 +120,7 @@
 
   function getBytesFromCode(input) {
     const code = asBytes(input), compressed = compressCode(code);
+    if (code.length > 0xffff) throw new RangeError('PICO-8 Lua code is too large for the PNG code-length header');
     let encoded;
     if (compressed.length < code.length) {
       encoded = new Uint8Array(8 + compressed.length);
@@ -127,7 +128,8 @@
       encoded.set(compressed, 8);
     } else encoded = code;
     const output = new Uint8Array(CODE_END - CODE_OFFSET);
-    output.set(encoded.slice(0, output.length));
+    if (encoded.length > output.length) throw new RangeError('PICO-8 Lua code does not fit in the PNG code region');
+    output.set(encoded);
     return output;
   }
 
