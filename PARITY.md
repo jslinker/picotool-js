@@ -13,7 +13,7 @@ The supported JavaScript behavior is checked by running Node and Python over the
 ### CLI orchestration and presentation
 
 - Match multi-file headings, error continuation, argument parsing, and exit codes.
-- Match the filesystem wrappers for `writep8`, `luamin`, and `luafmt`, including `luafmt --overwrite` for text carts. The vendored Python writer does not prompt before overwrite.
+- Match remaining filesystem-wrapper edge cases for `writep8`, `luamin`, and `luafmt`, including `luafmt --overwrite` for text carts. Writer commands now report the output path after a successful cart load and before a write attempt, as Python does. The vendored Python writer does not prompt before overwrite.
 - Extend the `p8tool` entry point beyond the implemented `stats`, `listlua`, `listtokens`, `writep8`, `luamin`, `luafmt`, `luafind`, and `build` slices for text and PNG carts; raw listing is text-only. `build` accepts Lua module sources, `--lua-path` module lookups, and section overrides, including PNG carts, but its name-preservation options and some filesystem/argument edge cases need Python comparison. Check output naming, presentation and argument edge cases against Python.
 - Add `printast` after the public AST model exists.
 

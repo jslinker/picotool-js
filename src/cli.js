@@ -210,10 +210,10 @@ function runWrite(args, io = {}) {
       if (!filename.endsWith('.p8')) throw new Error('filename must end in .p8 (PNG writing is async)');
       const output = outputName(filename, args.command, args.overwrite);
       const source = require('./picotool').parseP8((io.readFile || fs.readFileSync)(filename));
+      write(`${filename} -> ${output}\n`);
       const luaWriter = args.command === 'luamin' ? 'minify' : args.command === 'luafmt' ? 'format-token' : undefined;
       const bytes = writeP8(source, { luaWriter, minifyOptions: { keepAllNames: args.keepAllNames }, formatOptions: { indentwidth: args.indentwidth ?? 2 } });
       (io.writeFile || fs.writeFileSync)(output, bytes);
-      write(`${filename} -> ${output}\n`);
     } catch (exception) {
       failed = true;
       error(`${filename}: ${exception.message}\n`);
@@ -398,10 +398,12 @@ async function asyncWrite(args, io = {}) {
       const output = outputName(filename, args.command, args.overwrite);
       if (filename.endsWith('.p8')) {
         const parsed = require('./picotool').parseP8(input);
+        write(`${filename} -> ${output}\n`);
         const luaWriter = args.command === 'luamin' ? 'minify' : args.command === 'luafmt' ? 'format-token' : undefined;
         await writeFile(output, writeP8(parsed, { luaWriter, minifyOptions: { keepAllNames: args.keepAllNames }, formatOptions: { indentwidth: args.indentwidth ?? 2 } }));
       } else if (filename.endsWith('.p8.png')) {
         const { cartridge } = await readP8Png(input);
+        write(`${filename} -> ${output}\n`);
         let luaBytes = cartridge.code.code.slice(0, cartridge.code.codeLength);
         if (args.command !== 'writep8') {
           const parsed = p8FromPngCartridge(cartridge);
@@ -411,7 +413,6 @@ async function asyncWrite(args, io = {}) {
         }
         await writeFile(output, await writeP8Png(cartridge, input, luaBytes));
       } else throw new Error('filename must end in .p8 or .p8.png');
-      write(`${filename} -> ${output}\n`);
     } catch (exception) { failed = true; error(`${filename}: ${exception.message}\n`); }
   }
   return failed ? 1 : 0;

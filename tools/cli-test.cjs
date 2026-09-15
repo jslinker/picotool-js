@@ -81,6 +81,18 @@ try {
   assert.strictEqual(main(['luafmt', '--overwrite', writableCart], {
     write: () => {}, error: (text) => { throw new Error(text); },
   }), 0);
+  let failedWriteOutput = '';
+  assert.strictEqual(main(['writep8', writableCart], {
+    write: (text) => { failedWriteOutput += text; },
+    writeFile: () => { throw new Error('simulated write failure'); },
+    error: () => {},
+  }), 1);
+  assert.match(failedWriteOutput, /game\.p8 -> .*game_fmt\.p8/);
+  let missingWriteOutput = '';
+  assert.strictEqual(main(['writep8', join(testDirectory, 'missing.p8')], {
+    write: (text) => { missingWriteOutput += text; }, error: () => {},
+  }), 1);
+  assert.strictEqual(missingWriteOutput, '');
 } finally { rmSync(testDirectory, { recursive: true, force: true }); }
 
 const buildDirectory = mkdtempSync(join(tmpdir(), 'picotool-build-test-'));
