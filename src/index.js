@@ -17,5 +17,6 @@ const pngTransport = require('./png-transport');
 const cartridge = require('./cartridge');
 const fileApi = require('./file-api');
 const game = require('./game');
+const lexer = require('./lua-lexer');
 
-module.exports = Object.freeze({ ...base, ...sections, ...p8png, ...p8writer, ...build, ...includes, ...minify, ...formatToken, ...requireBuild, ...astWriters, ...pure, ...stats, ...listing, ...pngTransport, ...cartridge, ...fileApi, ...game });
+module.exports = Object.freeze({ ...base, ...sections, ...p8png, ...p8writer, ...build, ...includes, ...minify, ...formatToken, ...requireBuild, ...astWriters, ...pure, ...stats, ...listing, ...pngTransport, ...cartridge, ...fileApi, ...game, ...lexer });

@@ -18,10 +18,10 @@ class Parser {
   accept(type, value) {
     const start = this.pos;
     while (this.peek() && ['space', 'newline', 'comment'].includes(this.peek().type)
-      && !(this.peek().type === type && (value === undefined || this.peek().value === value))) this.pos += 1;
+      && !(this.peek().type === type && (value === undefined || this.peek().code === value))) this.pos += 1;
     const token = this.peek();
     if (token && (this.maxPos === null || this.pos < this.maxPos)
-      && token.type === type && (value === undefined || token.value === value)) {
+      && token.type === type && (value === undefined || token.code === value)) {
       this.pos += 1; return token;
     }
     this.pos = start; return null;
@@ -52,7 +52,7 @@ class Parser {
     const start = this.pos;
     if (this.varlist()) {
       const op = this.accept('symbol');
-      if (op && ASSIGNOPS.has(op.value)) {
+      if (op && ASSIGNOPS.has(op.code)) {
         this.require(this.explist(), 'Expected expression in assignment'); return true;
       }
     }
@@ -69,7 +69,7 @@ class Parser {
     if (this.keyword('if')) {
       this.exp();
       const afterCondition = this.pos;
-      if (!this.keyword('then') && !this.keyword('do') && this.tokens[afterCondition - 1]?.value === ')') {
+      if (!this.keyword('then') && !this.keyword('do') && this.tokens[afterCondition - 1]?.code === ')') {
         let lineEnd = afterCondition;
         while (lineEnd < this.tokens.length && this.tokens[lineEnd].type !== 'newline') lineEnd += 1;
         this.maxPos = lineEnd;
@@ -150,7 +150,7 @@ class Parser {
     if (!this.term()) return null;
     while (true) {
       const start = this.pos, op = this.accept('symbol') || this.accept('keyword');
-      if (!op || !BINOPS.has(op.value)) { this.pos = start; break; }
+      if (!op || !BINOPS.has(op.code)) { this.pos = start; break; }
       this.require(this.term(), 'exp2 in binop');
     }
     return true;
@@ -161,7 +161,7 @@ class Parser {
     if (this.keyword('function')) { this.require(this.funcbody(), 'funcbody in function'); return true; }
     if (this.prefixexp() || this.table()) return true;
     const start = this.pos, op = this.accept('symbol') || this.accept('keyword');
-    if (op && UNOPS.has(op.value)) { this.require(this.exp(), 'exp after unary op'); return true; }
+    if (op && UNOPS.has(op.code)) { this.require(this.exp(), 'exp after unary op'); return true; }
     this.pos = start; return null;
   }
   prefixexp() {

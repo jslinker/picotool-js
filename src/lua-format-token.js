@@ -13,10 +13,10 @@ function formatLuaTokens(source, { indentwidth = 2 } = {}) {
   let inFunction = false;
   let previous = null;
   let output = '';
-  const symbol = (token, ...values) => token?.type === 'symbol' && values.includes(token.value);
-  const keyword = (token, ...values) => token?.type === 'keyword' && values.includes(token.value);
+  const symbol = (token, ...codes) => token?.type === 'symbol' && codes.includes(token.code);
+  const keyword = (token, ...codes) => token?.type === 'keyword' && codes.includes(token.code);
   for (const token of tokens) {
-    if (token.type === 'newline' || token.type === 'space') { spaceBuffer += token.value; continue; }
+    if (token.type === 'newline' || token.type === 'space') { spaceBuffer += token.code; continue; }
     if (symbol(token, ')', '}', ']') || keyword(token, 'end', 'until', 'elseif', 'else')) indentLevel -= 1;
     const newlineCount = (spaceBuffer.match(/\n/g) || []).length;
     spaceBuffer = '';
@@ -29,7 +29,7 @@ function formatLuaTokens(source, { indentwidth = 2 } = {}) {
       || (keyword(previous, 'function') && symbol(token, '('))
       || previous === null)) output += ' ';
     previous = token;
-    output += token.value;
+    output += token.code;
     if (inFunction && symbol(token, ')')) { inFunction = false; indentLevel += 1; }
     if (keyword(token, 'function')) inFunction = true;
     if (symbol(token, '(', '{', '[') || keyword(token, 'do', 'repeat', 'then', 'else')) indentLevel += 1;

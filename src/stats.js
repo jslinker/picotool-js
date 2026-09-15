@@ -11,7 +11,7 @@ function cartridgeStats(source) {
   validateLua(lua);
   const tokens = tokenizeLua(lua);
   const comment = (index) => tokens[index]?.type === 'comment'
-    ? Buffer.from(tokens[index].value.slice(2).replace(/^[\x09-\x0d\x20]+|[\x09-\x0d\x20]+$/g, ''), 'latin1') : null;
+    ? Buffer.from(tokens[index].code.slice(2).replace(/^[\x09-\x0d\x20]+|[\x09-\x0d\x20]+$/g, ''), 'latin1') : null;
   return {
     title: comment(0), byline: comment(2), version: parsed.version,
     characterCount: diagnostics.characterCount, tokenCount: diagnostics.tokenCount,

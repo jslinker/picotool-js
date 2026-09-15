@@ -279,7 +279,7 @@ async function check(fixtures) {
     let value;
     try {
       value = { tokens: tokenizeLua(Buffer.from(entry.source, 'base64')).map((token) => ({
-        type: token.type, value: Buffer.from(token.value, 'latin1').toString('base64'),
+        type: token.type, value: Buffer.from(token.code, 'latin1').toString('base64'),
         line: token.line, column: token.column,
       })) };
     } catch (error) { value = { error: error.name, message: error.message }; }

@@ -4,11 +4,6 @@ The supported JavaScript behavior is checked by running Node and Python over the
 
 ## Remaining parity items
 
-### Public lexer token model
-
-- Add Python-compatible token classes such as `TokName`, `TokString`, `TokNumber`, and `TokSymbol`.
-- Match token equality, `matches()`, mutable `code`, parsed `value`, and position properties. Tokenization, diagnostics, writing, and `listTokens()` output already match.
-
 ### Public parser AST model
 
 - Add Python-compatible AST node classes, fields, and token ranges.
@@ -41,4 +36,4 @@ The supported JavaScript behavior is checked by running Node and Python over the
 
 ## Completed output parity
 
-The parity harness currently covers text parsing and section serialization; all Lua writer modes; lexer and parser corpora; diagnostics; builds and includes; `require()` bundling; Pure Lua output; listings and token listings; statistics and compression; cartridge-memory writes; PNG decoding, embedding, writing, round trips, and PNG includes. The Node API also selects `.p8` and `.p8.png` transports by filename through `fromFile()` and `toFile()`, preserves an existing PNG label on overwrite, and reports unsupported extensions with a dedicated error. A Python-shaped `Game` class exposes the section fields, empty-game factory, compressed-size calculation, memory writes, and file methods in both camelCase and compatibility spellings.
+The parity harness currently covers text parsing and section serialization; all Lua writer modes; lexer and parser corpora; diagnostics; builds and includes; `require()` bundling; Pure Lua output; listings and token listings; statistics and compression; cartridge-memory writes; PNG decoding, embedding, writing, round trips, and PNG includes. The Node API also selects `.p8` and `.p8.png` transports by filename through `fromFile()` and `toFile()`, preserves an existing PNG label on overwrite, and reports unsupported extensions with a dedicated error. A Python-shaped `Game` class exposes the section fields, empty-game factory, compressed-size calculation, memory writes, and file methods in both camelCase and compatibility spellings. Public lexer results use Python-shaped token classes with source code, parsed values, positions, mutation, equality, and `matches()` behavior.

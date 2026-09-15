@@ -1,5 +1,7 @@
 'use strict';
 
+const tokensApi = require('./lua-token');
+
 const KEYWORDS = new Set('and break do else elseif end false for function goto if in local nil not or repeat return then true until while'.split(' '));
 const EXEMPT_SYMBOLS = new Set([':', '.', ')', ']', '}']);
 const ESCAPES = new Map(Object.entries({ a: 7, b: 8, f: 12, n: 10, r: 13, t: 9, v: 11,
@@ -56,7 +58,7 @@ function scanLua(source, filename) {
   const tokens = [];
   function add(type, value, offset = index) {
     const [line, column] = position(code, offset);
-    tokens.push({ type, value, line, column });
+    tokens.push(tokensApi.createToken(type, value, line, column));
   }
   while (index < code.length) {
     const rest = code.slice(index);
@@ -142,4 +144,4 @@ function analyzeLua(source, filename) {
 function echoLua(source) { return Buffer.from(scanLua(source).echo, 'latin1'); }
 function tokenizeLua(source) { return scanLua(source).tokens; }
 
-module.exports = Object.freeze({ analyzeLua, echoLua, tokenizeLua, LexerError });
+module.exports = Object.freeze({ analyzeLua, echoLua, tokenizeLua, LexerError, ...tokensApi });

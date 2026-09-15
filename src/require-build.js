@@ -36,23 +36,23 @@ function calls(source) {
   function insideAnotherCall(index) {
     const stack = [];
     for (let j = 0; j < index; j += 1) {
-      const value = tokens[j].value;
-      if (value === '(') stack.push(tokens[j - 1]?.type === 'name' || [')', ']'].includes(tokens[j - 1]?.value));
+      const value = tokens[j].code;
+      if (value === '(') stack.push(tokens[j - 1]?.type === 'name' || [')', ']'].includes(tokens[j - 1]?.code));
       else if (value === ')') stack.pop();
     }
     return stack.includes(true);
   }
   for (let i = 0; i + 1 < tokens.length; i += 1) {
-    if (tokens[i].type !== 'name' || tokens[i].value !== 'require') continue;
-    if (i > 0 && ['.', ':'].includes(tokens[i - 1].value)) continue;
+    if (tokens[i].type !== 'name' || tokens[i].code !== 'require') continue;
+    if (i > 0 && ['.', ':'].includes(tokens[i - 1].code)) continue;
     if (insideAnotherCall(i)) continue;
     if (tokens[i + 1]?.type === 'string') pythonAttributeError("'TokString' object has no attribute 'explist'");
-    if (tokens[i + 1]?.value === '{') pythonAttributeError("'TableConstructor' object has no attribute 'explist'");
-    if (tokens[i + 1]?.value !== '(') continue;
+    if (tokens[i + 1]?.code === '{') pythonAttributeError("'TableConstructor' object has no attribute 'explist'");
+    if (tokens[i + 1]?.code !== '(') continue;
     const open = tokens[i + 1], args = [];
     let start = i + 2, depth = 0, end = -1;
     for (let j = start; j < tokens.length; j += 1) {
-      const value = tokens[j].value;
+      const value = tokens[j].code;
       if (value === ')' && depth === 0) { if (j > start) args.push(tokens.slice(start, j)); end = j; break; }
       if (value === ',' && depth === 0) { args.push(tokens.slice(start, j)); start = j + 1; continue; }
       if (['(', '{', '['].includes(value)) depth += 1;
@@ -63,18 +63,18 @@ function calls(source) {
     if (args[0].length !== 1 || args[0][0].type !== 'string') {
       throw new LuaBuildError('require() first argument must be a string literal', open);
     }
-    const requirePath = stringValue(args[0][0].value);
+    const requirePath = stringValue(args[0][0].code);
     let useGameLoop = false;
     if (args.length === 2) {
       const option = args[1];
-      if (option[0]?.value !== '{' || option.at(-1)?.value !== '}') {
+      if (option[0]?.code !== '{' || option.at(-1)?.code !== '}') {
         throw new LuaBuildError('require() second argument must be a table literal', open);
       }
-      if (option.length !== 5 || option[1].value !== 'use_game_loop' || option[2].value !== '='
-        || !['true', 'false'].includes(option[3].value)) {
+      if (option.length !== 5 || option[1].code !== 'use_game_loop' || option[2].code !== '='
+        || !['true', 'false'].includes(option[3].code)) {
         throw new LuaBuildError('Invalid require() options; did you mean {use_game_loop=true} ?', open);
       }
-      useGameLoop = option[3].value === 'true';
+      useGameLoop = option[3].code === 'true';
     }
     found.push({ path: requirePath, useGameLoop, token: open });
     i = end;
@@ -90,12 +90,12 @@ function removeGameLoops(source) {
   const offset = (token) => offsets[token.line] + token.column;
   const ranges = [];
   for (let i = 0; i + 1 < tokens.length; i += 1) {
-    if (tokens[i].value !== 'function' || !GAME_LOOP_NAMES.has(tokens[i + 1].value)) continue;
+    if (tokens[i].code !== 'function' || !GAME_LOOP_NAMES.has(tokens[i + 1].code)) continue;
     const start = offset(tokens[i]);
     if (start > 0 && source[start - 1] !== '\n') continue;
     let depth = 1, pendingDo = 0, last = -1;
     for (let j = i + 2; j < tokens.length; j += 1) {
-      const value = tokens[j].value;
+      const value = tokens[j].code;
       if (['function', 'if', 'for', 'while', 'repeat'].includes(value)) {
         depth += 1;
         if (value === 'for' || value === 'while') pendingDo += 1;
@@ -108,7 +108,7 @@ function removeGameLoops(source) {
       }
     }
     if (last < 0) continue;
-    let end = offset(tokens[last]) + tokens[last].value.length;
+    let end = offset(tokens[last]) + tokens[last].code.length;
     while (source[end] === ' ' || source[end] === '\t') end += 1;
     if (source[end] === '\n') end += 1;
     ranges.push([start, end]);

@@ -129,3 +129,31 @@ export class Game {
   toP8File(filename: string, options?: CartridgeFileOptions): Promise<void>;
   to_p8_file(filename: string, options?: CartridgeFileOptions): Promise<void>;
 }
+export class Token {
+  constructor(data: string | Uint8Array, line?: number | null, column?: number | null);
+  readonly type: string;
+  readonly name: string;
+  readonly line: number | null;
+  readonly column: number | null;
+  readonly lineno: number | null;
+  readonly charno: number | null;
+  readonly value: string | number;
+  code: string;
+  readonly length: number;
+  equals(other: unknown): boolean;
+  matches(other: unknown): boolean;
+}
+export class TokSpace extends Token {}
+export class TokNewline extends Token {}
+export class TokComment extends Token {}
+export class TokString extends Token { readonly value: string; }
+export class TokNumber extends Token { readonly value: number; }
+export class TokName extends Token {}
+export class TokLabel extends Token {}
+export class TokKeyword extends Token {}
+export class TokSymbol extends Token {}
+export function tokenizeLua(source: string | Uint8Array): Token[];
+export function analyzeLua(source: string | Uint8Array, filename?: string): {
+  characterCount: number; tokenCount: number; warnings: string[];
+};
+export function echoLua(source: string | Uint8Array): Uint8Array;

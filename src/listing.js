@@ -64,10 +64,10 @@ function listTokens(source) {
   let position = 0, output = '';
   for (const token of tokenizeLua(lua)) {
     if (token.type === 'newline') output += '\n';
-    else if (token.type === 'space' || token.type === 'comment') output += `<${pythonBytesRepr(token.value)}>`;
+    else if (token.type === 'space' || token.type === 'comment') output += `<${pythonBytesRepr(token.code)}>`;
     else {
       const value = token.type === 'number' ? pythonFloat(token.value)
-        : token.type === 'string' ? stringValue(token.value) : token.value;
+        : token.type === 'string' ? token.value : token.code;
       output += `<${position}:${token.type === 'number' ? value : pythonBytesRepr(value)}>`;
       position += 1;
     }

@@ -54,6 +54,19 @@ const loaded = await picotool.Game.fromFile('new-game.p8');
 
 The equivalent `make_empty_game()`, `update_from_lines()`, `write_cart_data()`, `get_compressed_size()`, `from_p8_file()`, and `to_p8_file()` spellings ease migration of code written against the Python API.
 
+### Lexer token API
+
+`tokenizeLua()` returns instances of `TokSpace`, `TokNewline`, `TokComment`, `TokString`, `TokNumber`, `TokName`, `TokLabel`, `TokKeyword`, and `TokSymbol`. Each token exposes its source `code`, parsed `value`, zero-based `line`/`column` position, and Python-compatible `lineno`/`charno` aliases. Use `equals()` for position-independent token equality and `matches()` to match a token class or token instance.
+
+String and number values are parsed while `code` retains their writable source representation:
+
+```js
+const [token] = picotool.tokenizeLua('0x10.8');
+console.log(token instanceof picotool.TokNumber); // true
+console.log(token.code);                          // 0x10.8
+console.log(token.value);                         // 16.5
+```
+
 The implemented compatibility scope is the structural parser and Node-based echo, token-minifying, token-formatting, AST-echoing, AST-minifying, and AST-formatting writers for text `.p8` cartridges; decoded Gfx, Gff, Map, Music, and Sfx memory APIs; empty-cartridge creation and arbitrary cartridge-memory writes; `.p8.png` reading, writing, hidden-data encoding, and Lua decompression; filename-selected `fromFile()`/`toFile()` cartridge I/O; Pure Lua shorthand conversion; cartridge stats, token listings, and compression; section-source builds; `require()` bundling; and single-level `.lua`/`.p8`/`.p8.png` includes. The Node parity command compares these outputs directly with Python picotool, including complete writer output bytes, diagnostics, and pixel embedding at every cartridge memory boundary.
 
 The complete list of remaining and intentionally excluded behavior is maintained in [PARITY.md](PARITY.md). The main exclusions are:

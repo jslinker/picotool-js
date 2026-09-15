@@ -46,13 +46,13 @@ function minifyLuaAst(source) {
   }
   for (const token of tokens) {
     if (token.type === 'comment') continue;
-    if (token.type === 'space' || token.type === 'newline') { spacing += token.value; continue; }
+    if (token.type === 'space' || token.type === 'newline') { spacing += token.code; continue; }
     flushSpace();
-    if (token.value === '{') tableDepth += 1;
-    if (token.value === '}') tableDepth -= 1;
-    if (token.value === ';' && tableDepth === 0) { output += ' '; continue; }
-    output += token.type === 'name' ? shortName(token.value)
-      : token.type === 'label' ? `::${shortName(token.value.slice(2, -2))}::` : token.value;
+    if (token.code === '{') tableDepth += 1;
+    if (token.code === '}') tableDepth -= 1;
+    if (token.code === ';' && tableDepth === 0) { output += ' '; continue; }
+    output += token.type === 'name' ? shortName(token.code)
+      : token.type === 'label' ? `::${shortName(token.code.slice(2, -2))}::` : token.code;
   }
   return Buffer.from(output.trimEnd(), 'latin1');
 }
@@ -63,10 +63,10 @@ function formatLuaAst(source, { indentwidth = 2 } = {}) {
   checkAstInput(bytes);
   const tokens = tokenizeLua(bytes);
   let output = '', spacing = '', level = 0, functionParams = false;
-  const sym = (token, value) => token.type === 'symbol' && token.value === value;
-  const key = (token, value) => token.type === 'keyword' && token.value === value;
+  const sym = (token, value) => token.type === 'symbol' && token.code === value;
+  const key = (token, value) => token.type === 'keyword' && token.code === value;
   for (const token of tokens) {
-    if (token.type === 'space' || token.type === 'newline') { spacing += token.value; continue; }
+    if (token.type === 'space' || token.type === 'newline') { spacing += token.code; continue; }
     if (token.type === 'comment' && output && !spacing.includes('\n')) spacing = '  ';
     if (key(token, 'end') || key(token, 'until') || key(token, 'else') || key(token, 'elseif')
       || sym(token, ')') || sym(token, '}')) level -= 1;
@@ -80,7 +80,7 @@ function formatLuaAst(source, { indentwidth = 2 } = {}) {
       output += value.replace(/\n{3,}/g, '\n\n');
       spacing = '';
     }
-    output += token.value;
+    output += token.code;
     if (functionParams && sym(token, ')')) { functionParams = false; level += 1; }
     if (key(token, 'function')) functionParams = true;
     if (key(token, 'then') || key(token, 'do') || key(token, 'repeat') || key(token, 'else')

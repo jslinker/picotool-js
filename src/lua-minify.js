@@ -28,7 +28,7 @@ function minifyLua(source, options = {}) {
   for (const token of tokens) {
     if (!seenNonComment && !['comment', 'space', 'newline'].includes(token.type)) seenNonComment = true;
     if (!seenNonComment && seenHeaderComments < 2 && token.type === 'comment') {
-      seenHeaderComments += 1; output += `${token.value}\n`; continue;
+      seenHeaderComments += 1; output += `${token.code}\n`; continue;
     }
     if (token.type === 'comment' || token.type === 'space') continue;
     if (token.type === 'newline') {
@@ -38,13 +38,13 @@ function minifyLua(source, options = {}) {
     } else if (token.type === 'name' || token.type === 'keyword' || token.type === 'number') {
       if (lastWasNameKeywordNumber) output += ' ';
       lastWasNameKeywordNumber = true; lastWasNewline = false;
-      output += token.type === 'name' ? shortName(token.value) : token.value;
+      output += token.type === 'name' ? shortName(token.code) : token.code;
     } else if (token.type === 'label') {
       lastWasNameKeywordNumber = false; lastWasNewline = false;
-      output += `::${shortName(token.value.slice(2, -2))}::`;
+      output += `::${shortName(token.code.slice(2, -2))}::`;
     } else {
-      lastWasNameKeywordNumber = [')', ']', '}'].includes(token.value);
-      lastWasNewline = false; output += token.value;
+      lastWasNameKeywordNumber = [')', ']', '}'].includes(token.code);
+      lastWasNewline = false; output += token.code;
     }
   }
   return Buffer.from(output, 'latin1');
