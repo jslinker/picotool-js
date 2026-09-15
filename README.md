@@ -16,15 +16,34 @@ npm install
 
 When this package is extracted into its own repository, `fast-png` will be installed automatically from the `dependencies` entry in `package.json`.
 
-Use `readP8Png()` for PNG cartridges, `writeP8PngFromP8()` to write a text or parsed `.p8` cartridge into a PNG label, and `processP8IncludesAsync()` when includes may contain `.p8.png` files. The lower-level `writeP8Png()` accepts the decoded domain model returned by `readP8Png()`.
+### Cartridge file API
 
-The implemented compatibility scope is the structural parser and Node-based echo, token-minifying, token-formatting, AST-echoing, AST-minifying, and AST-formatting writers for text `.p8` cartridges; decoded Gfx, Gff, Map, Music, and Sfx memory APIs; empty-cartridge creation and arbitrary cartridge-memory writes; `.p8.png` reading, writing, hidden-data encoding, and Lua decompression; Pure Lua shorthand conversion; cartridge stats, token listings, and compression; section-source builds; `require()` bundling; and single-level `.lua`/`.p8`/`.p8.png` includes. The Node parity command compares these outputs directly with Python picotool, including complete writer output bytes, diagnostics, and pixel embedding at every cartridge memory boundary.
+The Node entry point selects the transport from the complete filename. Both functions accept `.p8` and `.p8.png`, and `toFile()` can convert between the two formats:
+
+```js
+const picotool = require('@pico8-studio/picotool');
+
+const cartridge = await picotool.fromFile('game.p8');
+await picotool.toFile(cartridge, 'game.p8.png');
+```
+
+Overwriting an existing `.p8.png` preserves its visible label. For a different label, pass PNG bytes as `labelPng` or a path as `labelFilename`:
+
+```js
+await picotool.toFile(cartridge, 'game.p8.png', {
+  labelFilename: 'custom-label.png',
+});
+```
+
+`fromBytes()` and `toBytes()` provide the same filename-selected behavior without performing the final cartridge read or write. Lower-level callers can use `readP8Png()`, `writeP8PngFromP8()`, and `writeP8Png()` directly. Use `processP8IncludesAsync()` when includes may contain `.p8.png` files.
+
+The implemented compatibility scope is the structural parser and Node-based echo, token-minifying, token-formatting, AST-echoing, AST-minifying, and AST-formatting writers for text `.p8` cartridges; decoded Gfx, Gff, Map, Music, and Sfx memory APIs; empty-cartridge creation and arbitrary cartridge-memory writes; `.p8.png` reading, writing, hidden-data encoding, and Lua decompression; filename-selected `fromFile()`/`toFile()` cartridge I/O; Pure Lua shorthand conversion; cartridge stats, token listings, and compression; section-source builds; `require()` bundling; and single-level `.lua`/`.p8`/`.p8.png` includes. The Node parity command compares these outputs directly with Python picotool, including complete writer output bytes, diagnostics, and pixel embedding at every cartridge memory boundary.
 
 The complete list of remaining and intentionally excluded behavior is maintained in [PARITY.md](PARITY.md). The main exclusions are:
 
 - Python's `pypng` file transport itself. JavaScript uses `fast-png`; parity tests compare the decoded cartridge and exact embedded RGBA bytes with Python's PICO-8 pixel codec, then exercise JavaScript PNG encode/decode round trips across all upstream fixtures.
 - Python parser AST classes, walker subclasses, and AST debug printing. The Node API validates grammar and reproduces the observable writer and `require()` outputs used by the extension; it does not expose Python-shaped AST objects.
-- CLI-only filesystem orchestration and presentation commands such as `luafind`, `printast`, overwrite prompting, CSV formatting, and filename-based formatter selection. `listLua()` and `listTokens()` cover the working Lua and token listing output.
+- CLI-only orchestration and presentation commands such as `luafind`, `printast`, overwrite prompting, and CSV formatting. `listLua()` and `listTokens()` cover the working Lua and token listing output.
 - Raw Lua listing, which calls the missing `Game.get_raw_data_from_p8_file` API in this vendored revision.
 - `.rom` input and output. Python's `ROMFormatter` methods only raise `NotImplementedError`.
 - The demo script and Python-specific utility globals, logging streams, and exception inheritance details.

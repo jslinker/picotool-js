@@ -4,13 +4,6 @@ The supported JavaScript behavior is checked by running Node and Python over the
 
 ## Remaining parity items
 
-### Unified cartridge file API
-
-- Select `.p8` or `.p8.png` behavior from a filename.
-- Provide `fromFile` and `toFile` equivalents.
-- Reuse an existing PNG label when overwriting a cartridge.
-- Match unsupported-extension errors.
-
 ### Python-shaped Game API
 
 - Expose a `Game` class with Python-compatible fields and factories.
@@ -54,4 +47,4 @@ The supported JavaScript behavior is checked by running Node and Python over the
 
 ## Completed output parity
 
-The parity harness currently covers text parsing and section serialization; all Lua writer modes; lexer and parser corpora; diagnostics; builds and includes; `require()` bundling; Pure Lua output; listings and token listings; statistics and compression; cartridge-memory writes; PNG decoding, embedding, writing, round trips, and PNG includes.
+The parity harness currently covers text parsing and section serialization; all Lua writer modes; lexer and parser corpora; diagnostics; builds and includes; `require()` bundling; Pure Lua output; listings and token listings; statistics and compression; cartridge-memory writes; PNG decoding, embedding, writing, round trips, and PNG includes. The Node API also selects `.p8` and `.p8.png` transports by filename through `fromFile()` and `toFile()`, preserves an existing PNG label on overwrite, and reports unsupported extensions with a dedicated error.

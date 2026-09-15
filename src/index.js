@@ -15,5 +15,6 @@ const stats = require('./stats');
 const listing = require('./listing');
 const pngTransport = require('./png-transport');
 const cartridge = require('./cartridge');
+const fileApi = require('./file-api');
 
-module.exports = Object.freeze({ ...base, ...sections, ...p8png, ...p8writer, ...build, ...includes, ...minify, ...formatToken, ...requireBuild, ...astWriters, ...pure, ...stats, ...listing, ...pngTransport, ...cartridge });
+module.exports = Object.freeze({ ...base, ...sections, ...p8png, ...p8writer, ...build, ...includes, ...minify, ...formatToken, ...requireBuild, ...astWriters, ...pure, ...stats, ...listing, ...pngTransport, ...cartridge, ...fileApi });

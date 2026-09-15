@@ -78,3 +78,18 @@ export function writeP8PngFromP8(source: ParsedP8 | string | Uint8Array | ArrayB
 export function makeEmptyCartridge(options?: { filename?: string; version?: number }): any;
 export function writeCartData(cartridge: any, data: Uint8Array | number[], startAddress?: number): any;
 export function cartridgeCompressedSize(cartridge: any): number;
+export class UnrecognizedFileType extends P8Error {
+  readonly filename: string;
+}
+export function formatForFilename(filename: string): 'p8' | 'p8.png';
+export function fromBytes(input: Uint8Array | ArrayBuffer, filename: string): Promise<ParsedP8 | any>;
+export function fromFile(filename: string): Promise<ParsedP8 | any>;
+export interface CartridgeFileOptions extends P8WriterOptions {
+  labelPng?: Uint8Array | ArrayBuffer;
+  labelFilename?: string;
+  luaBytes?: Uint8Array;
+}
+export function toBytes(cartridge: ParsedP8 | any, filename: string,
+  options?: CartridgeFileOptions): Promise<Uint8Array>;
+export function toFile(cartridge: ParsedP8 | any, filename: string,
+  options?: CartridgeFileOptions): Promise<void>;
