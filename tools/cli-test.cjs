@@ -39,6 +39,36 @@ function comparePythonEvents(command, filenames) {
   assert.deepStrictEqual(collapseEvents(events), collapseEvents(expected.events), `${command}: ordered output/error events`);
 }
 const upstreamCart = resolve(__dirname, '../../../vendor/picotool/tests/testdata/test_cart.p8');
+const pythonCliMain = String.raw`import sys
+from pico8 import tool
+sys.exit(tool.main(sys.argv[1:]))`;
+const fileSystem = require('node:fs');
+for (const sourceCart of [upstreamCart, resolve(__dirname, '../../../vendor/picotool/tests/testdata/test_gol.p8')]) {
+for (const [command, options] of [['writep8', []], ['luamin', []], ['luamin', ['--keep-all-names']], ['luafmt', []], ['luafmt', ['--indentwidth', '4']], ['luafmt', ['--overwrite']]]) {
+  const directory = mkdtempSync(join(tmpdir(), `picotool-writer-oracle-${command}-`));
+  const input = join(directory, 'game.p8');
+  const output = options.includes('--overwrite') ? input : join(directory, 'game_fmt.p8');
+  const original = fileSystem.readFileSync(sourceCart);
+  try {
+    fileSystem.writeFileSync(input, original);
+    const pythonResult = spawnSync('python3', ['-c', pythonCliMain, command, ...options, input], {
+      env: { ...process.env, PYTHONPATH: resolve(__dirname, '../../../vendor/picotool') },
+    });
+    assert.strictEqual(pythonResult.status, 0, pythonResult.stderr.toString());
+    const pythonOutput = fileSystem.readFileSync(output);
+    fileSystem.writeFileSync(input, original);
+    if (output !== input) fileSystem.unlinkSync(output);
+    let javascriptOutput = '', javascriptErrors = '';
+    const javascriptStatus = main([command, ...options, input], {
+      write: (value) => { javascriptOutput += value; }, error: (value) => { javascriptErrors += value; },
+    });
+    assert.strictEqual(javascriptStatus, pythonResult.status, `${command} ${options.join(' ')}: status`);
+    assert.strictEqual(javascriptOutput, pythonResult.stdout.toString(), `${command} ${options.join(' ')}: notice`);
+    assert.strictEqual(javascriptErrors, pythonResult.stderr.toString(), `${command} ${options.join(' ')}: errors`);
+    assert.deepStrictEqual(fileSystem.readFileSync(output), pythonOutput, `${command} ${options.join(' ')}: written cart bytes`);
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+}
+}
 for (const command of ['stats', 'listlua', 'listtokens', 'printast']) {
   comparePythonEvents(command, [upstreamCart, 'missing-extension.txt', upstreamCart]);
   comparePythonEvents(command, ['missing-extension.txt']);
@@ -283,7 +313,7 @@ mainAsync(['stats', png], {
     });
   }).then((pngStatus) => {
     assert.strictEqual(pngStatus, 0);
-    return Promise.all(['luamin', 'luafmt'].map((command) => mainAsync([command, png], {
+    return Promise.all([['luamin', []], ['luafmt', []], ['luafmt', ['--overwrite']]].map(([command, options]) => mainAsync([command, ...options, png], {
       writeFile: (filename, bytes) => {
         assert.strictEqual(filename, pngOutput);
         assert.ok(Buffer.from(bytes).length > 100);
@@ -291,7 +321,7 @@ mainAsync(['stats', png], {
       write: () => {}, error: (text) => { throw new Error(text); },
     })));
   }).then((statuses) => {
-    assert.deepStrictEqual(statuses, [0, 0]);
+    assert.deepStrictEqual(statuses, [0, 0, 0]);
     return Promise.all(['stats', 'listlua', 'listtokens', 'printast'].map(async (command) => {
       const events = [];
       const status = await mainAsync([command, png, 'missing-extension.txt', upstreamCart], {
