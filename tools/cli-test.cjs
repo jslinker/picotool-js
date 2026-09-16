@@ -254,7 +254,7 @@ try {
   assert.strictEqual(main(['build', '--lua', luaFile, '--lua-path', 'modules/?.lua', outputFile], {
     write: (text) => { buildOutput += text; }, error: (text) => { throw new Error(text); },
   }), 0);
-  assert.match(buildOutput, /built\.p8/);
+  assert.strictEqual(buildOutput, '');
   const built = require('fs').readFileSync(outputFile, 'utf8');
   assert.match(built, /print\("ok"\)/);
   assert.match(built, /package\._c\["module"\]/);
@@ -289,6 +289,47 @@ try {
   assert.match(keepAllBuild, /enemy_score/);
   assert.match(keepFileBuild, /player_score/);
   assert.doesNotMatch(keepFileBuild, /enemy_score/);
+  const pythonBuildOutput = join(buildDirectory, 'python-built.p8');
+  const javascriptBuildOutput = join(buildDirectory, 'javascript-built.p8');
+  const pythonBuild = spawnSync('python3', ['-c', pythonCliMain, 'build', '--lua', luaFile, pythonBuildOutput], {
+    env: { ...process.env, PYTHONPATH: resolve(__dirname, '../../../vendor/picotool') },
+  });
+  assert.strictEqual(pythonBuild.status, 0, pythonBuild.stderr.toString());
+  assert.strictEqual(pythonBuild.stdout.toString(), '');
+  let javascriptBuildNotice = '';
+  assert.strictEqual(main(['build', '--lua', luaFile, javascriptBuildOutput], {
+    write: (value) => { javascriptBuildNotice += value; }, error: (value) => { throw new Error(value); },
+  }), 0);
+  assert.strictEqual(javascriptBuildNotice, '');
+  assert.deepStrictEqual(require('fs').readFileSync(javascriptBuildOutput), require('fs').readFileSync(pythonBuildOutput));
+  const pythonExisting = join(buildDirectory, 'python-existing.p8');
+  const javascriptExisting = join(buildDirectory, 'javascript-existing.p8');
+  require('fs').copyFileSync(upstreamCart, pythonExisting);
+  require('fs').copyFileSync(upstreamCart, javascriptExisting);
+  const pythonExistingBuild = spawnSync('python3', ['-c', pythonCliMain, 'build', '--empty-gfx', pythonExisting], {
+    env: { ...process.env, PYTHONPATH: resolve(__dirname, '../../../vendor/picotool') },
+  });
+  assert.strictEqual(pythonExistingBuild.status, 0, pythonExistingBuild.stderr.toString());
+  assert.strictEqual(main(['build', '--empty-gfx', javascriptExisting], {
+    write: () => { throw new Error('build should be silent'); }, error: (value) => { throw new Error(value); },
+  }), 0);
+  assert.deepStrictEqual(require('fs').readFileSync(javascriptExisting), require('fs').readFileSync(pythonExisting));
+  const unsupportedSource = join(buildDirectory, 'source.txt');
+  require('fs').writeFileSync(unsupportedSource, 'not a cart');
+  for (const argv of [
+    ['build', join(buildDirectory, 'bad.txt')],
+    ['build', '--lua', join(buildDirectory, 'missing.lua'), join(buildDirectory, 'missing-source.p8')],
+    ['build', '--lua', unsupportedSource, join(buildDirectory, 'unsupported-source.p8')],
+    ['build', '--lua', luaFile, '--empty-lua', join(buildDirectory, 'conflict.p8')],
+  ]) {
+    const pythonResult = spawnSync('python3', ['-c', pythonCliMain, ...argv], {
+      env: { ...process.env, PYTHONPATH: resolve(__dirname, '../../../vendor/picotool') },
+    });
+    let javascriptError = '';
+    const javascriptStatus = main(argv, { write: () => {}, error: (value) => { javascriptError += value; } });
+    assert.strictEqual(javascriptStatus, pythonResult.status, `${argv.join(' ')}: build error status`);
+    assert.strictEqual(javascriptError, pythonResult.stderr.toString(), `${argv.join(' ')}: build error text`);
+  }
   assert.deepStrictEqual(parseArgs(['build', '--empty-gfx', outputFile]).empty_gfx, true);
   let buildError = '';
   assert.strictEqual(main(['build', '--lua', luaFile, '--empty-lua', outputFile], {

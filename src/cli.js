@@ -340,7 +340,7 @@ function runBuild(args, io = {}) {
   const read = io.readFile || fs.readFileSync;
   const output = args.filename[0];
   if (!output || (!output.endsWith('.p8') && !output.endsWith('.p8.png'))) {
-    error('Output filename must end with .p8 or .p8.png.\n'); return 1;
+    error('Output filename must end with .p8 or .p8.png.'); return 1;
   }
   try {
     if (output.endsWith('.p8.png')) throw new Error('build .p8.png requires mainAsync');
@@ -358,9 +358,8 @@ function runBuild(args, io = {}) {
     }
     const bytes = buildP8(buildOptions(args, sources, existing, keepNamesFor(args, read)));
     (io.writeFile || fs.writeFileSync)(output, bytes);
-    if (!args.quiet) write(`${output}\n`);
     return 0;
-  } catch (exception) { error(`${exception.message}\n`); return 1; }
+  } catch (exception) { error(exception.message); return 1; }
 }
 
 function p8LuaSource(input) {
@@ -412,7 +411,7 @@ async function asyncBuild(args, io = {}) {
   const writeFile = io.writeFile || fs.promises.writeFile;
   const output = args.filename[0];
   if (!output || (!output.endsWith('.p8') && !output.endsWith('.p8.png'))) {
-    error('Output filename must end with .p8 or .p8.png.\n'); return 1;
+    error('Output filename must end with .p8 or .p8.png.'); return 1;
   }
   try {
     let existing;
@@ -440,9 +439,8 @@ async function asyncBuild(args, io = {}) {
     const bytes = buildP8(buildOptions(args, sources, existing, keepNames));
     if (output.endsWith('.p8')) await writeFile(output, bytes);
     else await fileApi.toFile(require('./picotool').parseP8(bytes), output);
-    if (!args.quiet) write(`${output}\n`);
     return 0;
-  } catch (exception) { error(`${exception.message}\n`); return 1; }
+  } catch (exception) { error(exception.message); return 1; }
 }
 
 async function asyncStatsRows(filenames, readFile = fs.promises.readFile) {
