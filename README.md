@@ -75,11 +75,11 @@ console.log(token.value);                         // 16.5
 picotool.findLua(cartridge, 'print', { filename: 'game.p8' });
 ```
 
-`BaseASTWalker` is available for handler-based traversal: subclasses can override `_walk_<NodeType>()`, `_walk_token()`, or `_walk_value()`, and `walk()` yields results from the root. Its integration with the full public parser AST remains in progress.
+`BaseASTWalker` is available for handler-based traversal: subclasses can override `_walk_<NodeType>()`, `_walk_token()`, or `_walk_value()`, and `walk()` yields results from the root. Traversal, token mutation, and child replacement are covered across the full accepted parser corpus.
 
 ### CLI progress
 
-The Node package exposes `p8tool` for `stats`, `listlua`, `listrawlua`, `listtokens`, `writep8`, `luamin`, `luafmt`, `build`, `printast`, and the intended `luafind` search behavior. It accepts multiple cartridge paths and continues after a load failure. `stats --csv` emits the same columns and CRLF row endings as Python's CSV writer. PNG cartridge statistics, parsed listings, writer commands, Lua search, builds, and AST debugging use the asynchronous PNG transport; raw Lua listing currently requires text `.p8` carts:
+The Node package exposes `p8tool` for `stats`, `listlua`, `listrawlua`, `listtokens`, `writep8`, `luamin`, `luafmt`, `build`, `printast`, and the intended `luafind` search behavior. It accepts multiple cartridge paths and continues after a load failure. `stats --csv` emits the same columns and CRLF row endings as Python's CSV writer. PNG cartridge statistics, parsed and raw listings, writer commands, Lua search, builds, and AST debugging use the asynchronous PNG transport:
 
 ```sh
 p8tool stats game.p8 game.p8.png
@@ -93,7 +93,7 @@ p8tool build --lua main.lua --lua-path 'modules/?.lua' output.p8
 p8tool printast game.p8.png
 ```
 
-Remaining command-presentation and argument edges are tracked in [PARITY.md](PARITY.md). The vendored Python writer does not prompt before overwrite.
+Intentional compatibility boundaries and broken upstream behavior are tracked in [PARITY.md](PARITY.md). The vendored Python writer does not prompt before overwrite.
 
 The implemented compatibility scope is the structural parser, public Python-named `parseLua()` AST with token ranges and token regeneration, `p8tool printast`, and Node-based echo, token-minifying, token-formatting, AST-echoing, AST-minifying, and AST-formatting writers for text `.p8` cartridges; decoded Gfx, Gff, Map, Music, and Sfx memory APIs; empty-cartridge creation and arbitrary cartridge-memory writes; `.p8.png` reading, writing, hidden-data encoding, and Lua decompression; filename-selected `fromFile()`/`toFile()` cartridge I/O; Pure Lua shorthand conversion; cartridge stats, token listings, and compression; section-source builds; `require()` bundling; and single-level `.lua`/`.p8`/`.p8.png` includes. The Node parity command compares these outputs directly with Python picotool, including complete writer output bytes, diagnostics, and pixel embedding at every cartridge memory boundary.
 
@@ -117,12 +117,12 @@ Python's AST writer has two observable failures that are retained in the Node co
 
 | Upstream area | Browser cases | Status |
 | --- | ---: | --- |
-| Text `.p8` structure and errors | 4 direct ports | Initial slice complete |
+| Text `.p8` structure and errors | 4 direct ports + parity corpus | Complete for the supported upstream behavior |
 | Gfx | 13 of 13 | Complete for the upstream unit file |
 | Gff | 4 of 4 | Complete for the upstream unit file |
 | Map | 8 of 8 | Complete for the upstream unit file |
 | Music | 6 of 6 | Complete for the upstream unit file |
-| Sfx | 9 of 10 | The remaining case reads `.p8.png` |
+| Sfx | 10 of 10 | Complete; the PNG-backed case runs through fixture parity |
 | `.p8.png` codec | 5 direct ports + 1 domain case | Pure codec cases complete; real fixture parity runs in the browser |
 | JavaScript-specific input behavior | 2 | CRLF/byte input and empty labels |
 
