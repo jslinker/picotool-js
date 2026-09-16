@@ -1,8 +1,30 @@
 'use strict';
 
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const { parseLua, Node } = require('../src/lua-ast-model');
 const { Chunk, StatAssignment, VarargDots } = require('../src/lua-ast-model');
+const astExports = require('../src/lua-ast-model');
+
+const declarations = fs.readFileSync(require('node:path').join(__dirname, '../src/index.d.ts'), 'utf8');
+function topLevelParams(text) {
+  if (!text.trim()) return [];
+  const out = []; let depth = 0, start = 0;
+  for (let index = 0; index < text.length; index += 1) {
+    if ('<[('.includes(text[index])) depth += 1;
+    else if ('>])'.includes(text[index])) depth -= 1;
+    else if (text[index] === ',' && depth === 0) { out.push(text.slice(start, index).trim()); start = index + 1; }
+  }
+  out.push(text.slice(start).trim()); return out;
+}
+for (const [name, constructor] of Object.entries(astExports)) {
+  if (typeof constructor !== 'function' || !(constructor.prototype instanceof Node)) continue;
+  const declaration = new RegExp(`export class ${name} extends Node \\{ constructor\\(([^)]*)\\);`).exec(declarations);
+  assert.ok(declaration, `missing named constructor typing: ${name}`);
+  const parameters = topLevelParams(declaration[1]);
+  assert.match(parameters.at(-1), /^options\?: AstNodeOptions$/);
+  assert.equal(parameters.length - 1, constructor.prototype._fields?.length ?? new constructor(...Array(parameters.length - 1).fill(null))._fields.length, `constructor typing arity mismatch: ${name}`);
+}
 
 assert.throws(() => new Chunk(), /Initializer for Chunk requires 1 fields, saw 0/);
 assert.throws(() => new StatAssignment([], '='), /Initializer for StatAssignment requires 3 fields, saw 2/);
@@ -11,6 +33,7 @@ assert.deepEqual(constructed.stats, []);
 assert.equal(constructed.start_pos, 4);
 assert.equal(constructed.end_pos, 9);
 assert.equal(constructed.note, 'test');
+assert.equal(new Chunk([], { note: 'metadata-only' }).note, 'metadata-only');
 assert.equal(new VarargDots({ start: 2, end: 3 }).start_pos, 2);
 for (const fragment of ['nil', 'name1', '123+', 'x y']) {
   assert.equal(parseLua(fragment).end_pos, 0, fragment);

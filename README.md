@@ -103,7 +103,7 @@ The complete list of remaining and intentionally excluded behavior is maintained
 - Malformed PNG labels with fewer than four 8-bit color planes are rejected, since Python's cartridge codec assumes four planes and may fail or mix channels.
 - Adam7-interlaced RGBA labels can be read and reused; writer output preserves their visible pixels but may use non-interlaced PNG transport.
 - PNG Lua writes reject payloads that exceed the format's 16-bit length header or fixed code region; Python can fail or produce oversized byte arrays for these inputs.
-- Remaining AST constructor-typing and `BaseASTWalker` mutation edges. Public AST fields, token values, spans, token-group layouts, and regenerated token streams are compared recursively with Python on all accepted vendored parser-test inputs, including fragment/residual cases, and text carts.
+- Remaining `BaseASTWalker` mutation edges. Public AST fields, token values, spans, token-group layouts, and regenerated token streams are compared recursively with Python on all accepted vendored parser-test inputs, including fragment/residual cases, and text carts. Named AST constructors have field-specific TypeScript signatures.
 - Remaining CLI presentation and argument edges, including command-specific error formatting. `listLua()` and `listTokens()` cover the working Lua and token listing output.
 - Raw Lua listing, which calls the missing `Game.get_raw_data_from_p8_file` API in this vendored revision.
 - Usable `.rom` input and output. Both Python and JavaScript recognize the extension but raise `NotImplementedError` because Python's `ROMFormatter` has no implementation.

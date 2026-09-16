@@ -180,44 +180,45 @@ export class Node {
   walk(visitor: ((node: Node) => void) | { visit(node: Node): void }): this;
 }
 export { Node as LuaNode };
-export class Chunk extends Node { stats: Node[]; }
-export class StatAssignment extends Node { varlist: VarList; assignop: TokSymbol; explist: ExpList; }
-export class StatFunctionCall extends Node { functioncall: FunctionCall | FunctionCallMethod; }
-export class StatDo extends Node { block: Chunk; }
-export class StatWhile extends Node { exp: Node; block: Chunk; }
-export class StatRepeat extends Node { block: Chunk; exp: Node; }
-export class StatIf extends Node { exp_block_pairs: Array<[Node | null, Chunk]>; }
-export class StatForStep extends Node { name: TokName; exp_init: Node; exp_end: Node; exp_step: Node | null; block: Chunk; }
-export class StatForIn extends Node { namelist: NameList; explist: ExpList; block: Chunk; }
-export class StatFunction extends Node { funcname: FunctionName; funcbody: FunctionBody; }
-export class StatLocalFunction extends Node { funcname: TokName; funcbody: FunctionBody; }
-export class StatLocalAssignment extends Node { namelist: NameList; explist: ExpList | null; }
-export class StatGoto extends Node { label: string; }
-export class StatLabel extends Node { label: string; }
-export class StatBreak extends Node {}
-export class StatReturn extends Node { explist: ExpList | null; }
-export class FunctionName extends Node { namepath: TokName[]; methodname: TokName | null; }
-export class FunctionArgs extends Node { explist: ExpList | null; }
-export class VarList extends Node { vars: Node[]; }
-export class VarName extends Node { name: TokName; }
-export class VarIndex extends Node { exp_prefix: Node; exp_index: Node; }
-export class VarAttribute extends Node { exp_prefix: Node; attr_name: TokName; }
-export class NameList extends Node { names: TokName[]; }
-export class ExpList extends Node { exps: Node[]; }
-export class ExpValue extends Node { value: Node | Token | boolean | null; }
-export class VarargDots extends Node {}
-export class ExpBinOp extends Node { exp1: Node; binop: TokSymbol | TokKeyword; exp2: Node; }
-export class ExpUnOp extends Node { unop: TokSymbol | TokKeyword; exp: Node; }
-export class FunctionCall extends Node { exp_prefix: Node; args: FunctionArgs | TableConstructor | string | null; }
-export class FunctionCallMethod extends Node { exp_prefix: Node; methodname: TokName; args: FunctionArgs | TableConstructor | string | null; }
-export class Function extends Node { funcbody: FunctionBody; }
-export class FunctionBody extends Node { parlist: NameList | null; dots: VarargDots | null; block: Chunk; }
-export class TableConstructor extends Node { fields: Node[]; }
-export class FieldExp extends Node { exp: Node; }
-export class FieldExpKey extends Node { key_exp: Node; exp: Node; }
-export class FieldNamedKey extends Node { key_name: TokName; exp: Node; }
-export class FieldOtherThing extends Node {}
-export class FieldNamed extends Node {}
+export interface AstNodeOptions { start?: number | null; end?: number | null; [key: string]: unknown; }
+export class Chunk extends Node { constructor(stats: Node[], options?: AstNodeOptions); stats: Node[]; }
+export class StatAssignment extends Node { constructor(varlist: VarList, assignop: TokSymbol, explist: ExpList, options?: AstNodeOptions); varlist: VarList; assignop: TokSymbol; explist: ExpList; }
+export class StatFunctionCall extends Node { constructor(functioncall: FunctionCall | FunctionCallMethod, options?: AstNodeOptions); functioncall: FunctionCall | FunctionCallMethod; }
+export class StatDo extends Node { constructor(block: Chunk, options?: AstNodeOptions); block: Chunk; }
+export class StatWhile extends Node { constructor(exp: Node, block: Chunk, options?: AstNodeOptions); exp: Node; block: Chunk; }
+export class StatRepeat extends Node { constructor(block: Chunk, exp: Node, options?: AstNodeOptions); block: Chunk; exp: Node; }
+export class StatIf extends Node { constructor(exp_block_pairs: Array<[Node | null, Chunk]>, options?: AstNodeOptions); exp_block_pairs: Array<[Node | null, Chunk]>; }
+export class StatForStep extends Node { constructor(name: TokName, exp_init: Node, exp_end: Node, exp_step: Node | null, block: Chunk, options?: AstNodeOptions); name: TokName; exp_init: Node; exp_end: Node; exp_step: Node | null; block: Chunk; }
+export class StatForIn extends Node { constructor(namelist: NameList, explist: ExpList, block: Chunk, options?: AstNodeOptions); namelist: NameList; explist: ExpList; block: Chunk; }
+export class StatFunction extends Node { constructor(funcname: FunctionName, funcbody: FunctionBody, options?: AstNodeOptions); funcname: FunctionName; funcbody: FunctionBody; }
+export class StatLocalFunction extends Node { constructor(funcname: TokName, funcbody: FunctionBody, options?: AstNodeOptions); funcname: TokName; funcbody: FunctionBody; }
+export class StatLocalAssignment extends Node { constructor(namelist: NameList, explist: ExpList | null, options?: AstNodeOptions); namelist: NameList; explist: ExpList | null; }
+export class StatGoto extends Node { constructor(label: string, options?: AstNodeOptions); label: string; }
+export class StatLabel extends Node { constructor(label: string, options?: AstNodeOptions); label: string; }
+export class StatBreak extends Node { constructor(options?: AstNodeOptions); }
+export class StatReturn extends Node { constructor(explist: ExpList | null, options?: AstNodeOptions); explist: ExpList | null; }
+export class FunctionName extends Node { constructor(namepath: TokName[], methodname: TokName | null, options?: AstNodeOptions); namepath: TokName[]; methodname: TokName | null; }
+export class FunctionArgs extends Node { constructor(explist: ExpList | null, options?: AstNodeOptions); explist: ExpList | null; }
+export class VarList extends Node { constructor(vars: Node[], options?: AstNodeOptions); vars: Node[]; }
+export class VarName extends Node { constructor(name: TokName, options?: AstNodeOptions); name: TokName; }
+export class VarIndex extends Node { constructor(exp_prefix: Node, exp_index: Node, options?: AstNodeOptions); exp_prefix: Node; exp_index: Node; }
+export class VarAttribute extends Node { constructor(exp_prefix: Node, attr_name: TokName, options?: AstNodeOptions); exp_prefix: Node; attr_name: TokName; }
+export class NameList extends Node { constructor(names: TokName[], options?: AstNodeOptions); names: TokName[]; }
+export class ExpList extends Node { constructor(exps: Node[], options?: AstNodeOptions); exps: Node[]; }
+export class ExpValue extends Node { constructor(value: Node | Token | boolean | null, options?: AstNodeOptions); value: Node | Token | boolean | null; }
+export class VarargDots extends Node { constructor(options?: AstNodeOptions); }
+export class ExpBinOp extends Node { constructor(exp1: Node, binop: TokSymbol | TokKeyword, exp2: Node, options?: AstNodeOptions); exp1: Node; binop: TokSymbol | TokKeyword; exp2: Node; }
+export class ExpUnOp extends Node { constructor(unop: TokSymbol | TokKeyword, exp: Node, options?: AstNodeOptions); unop: TokSymbol | TokKeyword; exp: Node; }
+export class FunctionCall extends Node { constructor(exp_prefix: Node, args: FunctionArgs | TableConstructor | string | null, options?: AstNodeOptions); exp_prefix: Node; args: FunctionArgs | TableConstructor | string | null; }
+export class FunctionCallMethod extends Node { constructor(exp_prefix: Node, methodname: TokName, args: FunctionArgs | TableConstructor | string | null, options?: AstNodeOptions); exp_prefix: Node; methodname: TokName; args: FunctionArgs | TableConstructor | string | null; }
+export class Function extends Node { constructor(funcbody: FunctionBody, options?: AstNodeOptions); funcbody: FunctionBody; }
+export class FunctionBody extends Node { constructor(parlist: NameList | null, dots: VarargDots | null, block: Chunk, options?: AstNodeOptions); parlist: NameList | null; dots: VarargDots | null; block: Chunk; }
+export class TableConstructor extends Node { constructor(fields: Node[], options?: AstNodeOptions); fields: Node[]; }
+export class FieldExp extends Node { constructor(exp: Node, options?: AstNodeOptions); exp: Node; }
+export class FieldExpKey extends Node { constructor(key_exp: Node, exp: Node, options?: AstNodeOptions); key_exp: Node; exp: Node; }
+export class FieldNamedKey extends Node { constructor(key_name: TokName, exp: Node, options?: AstNodeOptions); key_name: TokName; exp: Node; }
+export class FieldOtherThing extends Node { constructor(options?: AstNodeOptions); }
+export class FieldNamed extends Node { constructor(options?: AstNodeOptions); }
 export class AstParser { constructor(source: string | Uint8Array); parse(): Chunk; }
 export function parseLua(source: string | Uint8Array): Chunk;
 export function parseLuaAst(source: string | Uint8Array): Chunk;

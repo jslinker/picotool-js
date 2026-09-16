@@ -373,7 +373,7 @@ for (const name of PYTHON_NODE_TYPES) {
   const Named = class extends Node {
     constructor(...args) {
       const names = NAMED_FIELDS[name] || [];
-      const options = args.length === names.length + 1 && args.at(-1) && typeof args.at(-1) === 'object' && !Array.isArray(args.at(-1)) && ('start' in args.at(-1) || 'end' in args.at(-1)) ? args.pop() : {};
+      const options = args.length === names.length + 1 && args.at(-1) && typeof args.at(-1) === 'object' && !Array.isArray(args.at(-1)) ? args.pop() : {};
       if (args.length !== names.length) throw new TypeError(`Initializer for ${name} requires ${names.length} fields, saw ${args.length}`);
       const fields = {};
       names.forEach((field, i) => { fields[field] = args[i]; });
