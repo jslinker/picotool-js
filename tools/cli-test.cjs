@@ -461,6 +461,19 @@ mainAsync(['stats', png], {
   }).then((pngStatus) => {
     assert.strictEqual(pngStatus, 0);
     assert.match(pngListing, /<0:/);
+    let rawPng = '', rawText = '';
+    assert.strictEqual(main(['listrawlua', '--show-line-numbers', upstreamCart], {
+      write: (value) => { rawText += value; }, error: (value) => { throw new Error(value); },
+    }), 0);
+    return mainAsync(['listrawlua', '--show-line-numbers', png], {
+      write: (value) => { rawPng += value; }, error: (value) => { throw new Error(value); },
+    }).then((rawStatus) => {
+      assert.strictEqual(rawStatus, 0);
+      assert.match(rawText, /0: print\("0\.1\.10c"\)/);
+      assert.match(rawPng, /0: print\("0\.1\.10c"\)/);
+      assert.match(rawPng, /^0: /);
+    });
+  }).then(() => {
     return mainAsync(['writep8', png], {
       writeFile: (filename, bytes) => {
         assert.strictEqual(filename, pngOutput);
@@ -480,7 +493,7 @@ mainAsync(['stats', png], {
     })));
   }).then((statuses) => {
     assert.deepStrictEqual(statuses, [0, 0, 0]);
-    return Promise.all(['stats', 'listlua', 'listtokens', 'printast'].map(async (command) => {
+    return Promise.all(['stats', 'listlua', 'listrawlua', 'listtokens', 'printast'].map(async (command) => {
       const events = [];
       const status = await mainAsync([command, png, 'missing-extension.txt', upstreamCart], {
         write: (value) => events.push(['out', value]), error: (value) => events.push(['err', value]),

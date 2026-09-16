@@ -106,7 +106,7 @@ The complete list of remaining and intentionally excluded behavior is maintained
 - Adam7-interlaced RGBA labels can be read and reused; writer output preserves their visible pixels but may use non-interlaced PNG transport.
 - PNG Lua writes reject payloads that exceed the format's 16-bit length header or fixed code region; Python can fail or produce oversized byte arrays for these inputs.
 - Multi-file headings, ordered output/error continuation, unsupported-extension statuses, parser failures, malformed-cart continuation, option forms, and help exit semantics are compared with Python; help prose is generated natively in pure JavaScript. Writer success bytes and failure boundaries match Python. Fresh and existing text builds match exact Python bytes, silence, and error diagnostics; text/PNG build minification honors both advertised name-preservation options, which the vendored Python build path ignores.
-- Raw Lua listing, which calls the missing `Game.get_raw_data_from_p8_file` API in this vendored revision.
+- Python's text raw-listing implementation calls a missing API in this vendored revision; JavaScript supplies useful raw listing for both text and PNG carts.
 - Usable `.rom` input and output. Both Python and JavaScript recognize the extension but raise `NotImplementedError` because Python's `ROMFormatter` has no implementation.
 - The demo script and Python-specific utility globals, logging streams, and exception inheritance details.
 - `--optimize-tokens` and property-name-preserving minification, which are also `NotImplementedError` in Python.

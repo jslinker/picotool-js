@@ -214,13 +214,16 @@ function runListing(args, io = {}) {
       listLua(source, { pure: args.pureLua, showLineNumbers: args.showLineNumbers }));
     else if (args.command === 'listrawlua') {
       const parsed = require('./picotool').parseP8(source);
-      const lines = (parsed.sections.lua || []).join('').match(/[^\n]*\n|[^\n]+$/g) || [];
-      write((args.filename.length > 1 ? `=== ${filename} ===\n` : '') + lines.map((line, index) =>
-        `${args.showLineNumbers ? `${index}: ` : ''}${friendly(Buffer.from(line, 'latin1'))}`).join('') + '\n');
+      write((args.filename.length > 1 ? `=== ${filename} ===\n` : '') + formatRawLua((parsed.sections.lua || []).join(''), args.showLineNumbers));
     } else write((args.filename.length > 1 ? `=== ${filename} ===\n` : '') + listTokens(source));
   }
   if (args.command === 'listrawlua' && sequence.length === 1 && sequence[0].unsupported) return 1;
   return errors.some((item) => !item.unsupported) && args.filename.length === 1 ? 1 : 0;
+}
+
+function formatRawLua(source, showLineNumbers = false) {
+  return String(source).split('\n').map((line, index) =>
+    `${showLineNumbers ? `${index}: ` : ''}${friendly(Buffer.from(line, 'latin1'))}\n`).join('') + '\n';
 }
 
 function runLuaFind(args, io = {}) {
@@ -491,10 +494,16 @@ async function asyncListing(args, io = {}) {
       if (filename.endsWith('.p8')) source = await read(filename);
       else if (filename.endsWith('.p8.png')) {
         const { cartridge } = await readP8Png(await read(filename));
-        source = p8FromPngCartridge(cartridge);
+        source = args.command === 'listrawlua'
+          ? require('./picotool').decodeP8scii(cartridge.code.code.slice(0, cartridge.code.codeLength))
+          : p8FromPngCartridge(cartridge);
       }
       const prefix = args.filename.length > 1 ? `=== ${filename} ===\n` : '';
-      write(prefix + (args.command === 'listlua'
+      if (args.command === 'listrawlua') {
+        const raw = filename.endsWith('.p8')
+          ? (require('./picotool').parseP8(source).sections.lua || []).join('') : source;
+        write(prefix + formatRawLua(raw, args.showLineNumbers));
+      } else write(prefix + (args.command === 'listlua'
         ? listLua(source, { pure: args.pureLua, showLineNumbers: args.showLineNumbers })
         : listTokens(source)));
     } catch (exception) {
@@ -582,7 +591,7 @@ async function mainAsync(argv = process.argv.slice(2), io = {}) {
     const args = parseArgs(argv);
     if (args.help) { (io.write || ((text) => process.stdout.write(text)))(formatHelp(args.command)); return 0; }
     if (!args.command) { (io.write || ((text) => process.stdout.write(text)))(formatHelp()); return 1; }
-    if (['listlua', 'listtokens'].includes(args.command) && args.filename.some((filename) => filename.endsWith('.p8.png'))) return asyncListing(args, io);
+    if (['listlua', 'listrawlua', 'listtokens'].includes(args.command) && args.filename.some((filename) => filename.endsWith('.p8.png'))) return asyncListing(args, io);
     if (['writep8', 'luamin', 'luafmt'].includes(args.command) && args.filename.some((filename) => filename.endsWith('.p8.png'))) return asyncWrite(args, io);
     if (args.command === 'luafind' && args.filename.slice(1).some((filename) => filename.endsWith('.p8.png'))) return asyncLuaFind(args, io);
     if (args.command === 'build') return asyncBuild(args, io);
@@ -625,4 +634,4 @@ function main(argv = process.argv.slice(2), io = {}) {
   }
 }
 
-module.exports = Object.freeze({ asyncBuild, asyncPrintAst, asyncStatsRows, buildOptions, formatHelp, friendly, formatStats, main, mainAsync, parseArgs, runBuild, runListing, runPrintAst, runStats, statsRows });
+module.exports = Object.freeze({ asyncBuild, asyncPrintAst, asyncStatsRows, buildOptions, formatHelp, formatRawLua, friendly, formatStats, main, mainAsync, parseArgs, runBuild, runListing, runPrintAst, runStats, statsRows });

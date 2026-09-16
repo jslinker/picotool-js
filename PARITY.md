@@ -7,7 +7,7 @@ The supported JavaScript behavior is checked by running Node and Python over the
 ### Broken or unavailable upstream behavior
 
 - Python 3 `luafind` searches a bytes line with a string regex and raises `TypeError`. JavaScript intentionally implements the documented intended line search through `findLua()` and `p8tool luafind`; broader pattern/presentation cases remain to be checked.
-- `listrawlua` calls the missing `Game.get_raw_data_from_p8_file()` API in the vendored revision.
+- Python's text-cart `listrawlua` calls the missing `Game.get_raw_data_from_p8_file()` API in the vendored revision. JavaScript provides useful raw listing for both text and PNG carts, including line numbers and mixed-file ordering.
 - `.rom` is recognized by filename and raises `NotImplementedError` on reading and writing, as the upstream formatter does; usable ROM transport remains unavailable upstream.
 - `buildP8({ optimizeTokens: true })` for `.lua` sources and `minifyLua(..., { keepPropertyNames: true })` now reproduce Python's `NotImplementedError`; usable implementations remain unavailable upstream.
 
