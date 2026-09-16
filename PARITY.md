@@ -1,6 +1,6 @@
 # Parity status
 
-The supported JavaScript behavior is checked by running Node and Python over the same inputs and comparing written output, diagnostics, decoded memory, or pixel data. Run `npm test` for the complete parity report.
+The supported JavaScript behavior is checked by running Node and Python over the same inputs and comparing written output, diagnostics, decoded memory, or pixel data. Run `npm test` for the full configured suite in the original monorepo layout; `npm run test:parity` supports a standalone oracle checkout. See the [2026-09-16 audit and completion proposal](PARITY-AUDIT.md) for remaining API gaps, standalone test setup limitations, and release acceptance gates. The results below establish tested output parity, not complete Python object API or browser parity.
 
 ## Intentional compatibility boundaries
 
