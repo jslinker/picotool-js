@@ -42,6 +42,17 @@ const upstreamCart = resolve(__dirname, '../../../vendor/picotool/tests/testdata
 const pythonCliMain = String.raw`import sys
 from pico8 import tool
 sys.exit(tool.main(sys.argv[1:]))`;
+for (const argv of [
+  [], ['bogus'], ['stats'], ['stats', '--bogus', 'cart.p8'],
+  ['luafmt', '--indentwidth', 'nope', 'cart.p8'], ['build', '--lua'],
+  ['build', '--lua-path'], ['luamin', '--keep-names-from-file'],
+]) {
+  const pythonResult = spawnSync('python3', ['-c', pythonCliMain, ...argv], {
+    env: { ...process.env, PYTHONPATH: resolve(__dirname, '../../../vendor/picotool') },
+  });
+  const javascriptStatus = main(argv, { write: () => {}, error: () => {} });
+  assert.strictEqual(javascriptStatus, pythonResult.status, `argument-parser status: ${argv.join(' ')}`);
+}
 const fileSystem = require('node:fs');
 const writerOracleOutputs = new Map();
 for (const sourceCart of [upstreamCart, resolve(__dirname, '../../../vendor/picotool/tests/testdata/test_gol.p8')]) {
@@ -83,6 +94,31 @@ for (const command of ['stats', 'listlua', 'listtokens', 'printast']) {
 for (const command of ['listrawlua', 'writep8', 'luamin', 'luafmt']) comparePythonEvents(command, ['missing-extension.txt']);
 comparePythonEvents('luafind', ['pattern', 'missing-extension.txt']);
 
+const fatalDirectory = mkdtempSync(join(tmpdir(), 'picotool-cli-fatal-'));
+try {
+  const malformedCart = join(fatalDirectory, 'malformed.p8');
+  fileSystem.writeFileSync(malformedCart, 'pico-8 cartridge // http://www.pico-8.com\nversion 33\n__lua__\nx=\n');
+  for (const command of ['stats', 'listlua', 'listtokens', 'printast']) {
+    const pythonSingle = spawnSync('python3', ['-c', pythonCliMain, command, malformedCart], {
+      env: { ...process.env, PYTHONPATH: resolve(__dirname, '../../../vendor/picotool') },
+    });
+    const javascriptSingle = main([command, malformedCart], { write: () => {}, error: () => {} });
+    assert.strictEqual(javascriptSingle, pythonSingle.status, `${command}: fatal single-file status`);
+
+    const events = [];
+    const pythonMixedResult = spawnSync('python3', ['-c', pythonEventOracle, command, upstreamCart, malformedCart, upstreamCart], {
+      env: { ...process.env, PYTHONPATH: '../../vendor/picotool' },
+    });
+    assert.strictEqual(pythonMixedResult.status, 0, pythonMixedResult.stderr.toString());
+    const pythonMixed = JSON.parse(pythonMixedResult.stdout.toString());
+    const javascriptMixed = main([command, upstreamCart, malformedCart, upstreamCart], {
+      write: (value) => events.push(['out', value]), error: (value) => events.push(['err', value]),
+    });
+    assert.strictEqual(javascriptMixed, pythonMixed.status, `${command}: fatal multi-file continuation status`);
+    assert.deepStrictEqual(collapseEvents(events).map(([channel]) => channel), collapseEvents(pythonMixed.events).map(([channel]) => channel), `${command}: fatal multi-file ordering`);
+  }
+} finally { rmSync(fatalDirectory, { recursive: true, force: true }); }
+
 const cart = [
   'pico-8 cartridge // http://www.pico-8.com\n', 'version 33\n', '__lua__\n',
   '-- Title\n', '-- Byline\n', 'print("hello")\n',
@@ -100,6 +136,8 @@ assert.deepStrictEqual(parseArgs(['luamin', '--keep-names-from-file', 'names.txt
   quiet: false, debug: false, command: 'luamin', csv: false, keepNamesFromFile: 'names.txt', filename: ['one.p8'],
 });
 assert.throws(() => parseArgs(['luamin', '--keep-names-from-file']), /requires a filename/);
+assert.deepStrictEqual(parseArgs(['stats', '--', '-cart.p8']).filename, ['-cart.p8']);
+assert.deepStrictEqual(parseArgs(['listlua', '--', '--pure-lua']).filename, ['--pure-lua']);
 
 const files = new Map([['one.p8', Buffer.from(cart)], ['two.p8', Buffer.from(cart)]]);
 const read = (filename) => files.get(filename) || (() => { throw new Error('missing'); })();

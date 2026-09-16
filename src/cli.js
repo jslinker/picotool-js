@@ -18,57 +18,60 @@ const { printAst } = require('./ast-print');
 function parseArgs(argv = []) {
   const args = Array.from(argv);
   const result = { quiet: false, debug: false, command: null, csv: false, filename: [] };
+  let optionsEnded = false;
   while (args.length) {
     const arg = args.shift();
-    if (result.command === null && (arg === '-q' || arg === '--quiet')) {
+    if (arg === '--' && !optionsEnded) {
+      optionsEnded = true;
+    } else if (!optionsEnded && result.command === null && (arg === '-q' || arg === '--quiet')) {
       result.quiet = true;
-    } else if (result.command === null && arg === '--debug') {
+    } else if (!optionsEnded && result.command === null && arg === '--debug') {
       result.debug = true;
-    } else if (result.command === null && arg.startsWith('-')) {
+    } else if (!optionsEnded && result.command === null && arg.startsWith('-')) {
       throw new Error(`unknown option: ${arg}`);
     } else if (result.command === null) {
       result.command = arg;
       if (!['stats', 'listlua', 'listtokens', 'listrawlua', 'writep8', 'luamin', 'luafmt', 'luafind', 'build', 'printast'].includes(arg)) throw new Error(`unknown command: ${arg}`);
-    } else if (arg === '--csv' && result.command === 'stats') {
+    } else if (!optionsEnded && arg === '--csv' && result.command === 'stats') {
       result.csv = true;
-    } else if (arg === '--show-line-numbers' && result.command === 'listlua') {
+    } else if (!optionsEnded && arg === '--show-line-numbers' && result.command === 'listlua') {
       result.showLineNumbers = true;
-    } else if (arg === '--pure-lua' && result.command === 'listlua') {
+    } else if (!optionsEnded && arg === '--pure-lua' && result.command === 'listlua') {
       result.pureLua = true;
-    } else if (arg === '--show-line-numbers' && result.command === 'listrawlua') {
+    } else if (!optionsEnded && arg === '--show-line-numbers' && result.command === 'listrawlua') {
       result.showLineNumbers = true;
-    } else if (arg === '--overwrite' && result.command === 'luafmt') {
+    } else if (!optionsEnded && arg === '--overwrite' && result.command === 'luafmt') {
       result.overwrite = true;
-    } else if (arg === '--indentwidth' && result.command === 'luafmt') {
+    } else if (!optionsEnded && arg === '--indentwidth' && result.command === 'luafmt') {
       result.indentwidth = Number(args.shift());
       if (!Number.isInteger(result.indentwidth)) throw new Error('--indentwidth must be an integer');
-    } else if (arg === '--keep-all-names' && result.command === 'luamin') {
+    } else if (!optionsEnded && arg === '--keep-all-names' && result.command === 'luamin') {
       result.keepAllNames = true;
-    } else if (arg === '--keep-names-from-file' && result.command === 'luamin') {
+    } else if (!optionsEnded && arg === '--keep-names-from-file' && result.command === 'luamin') {
       result.keepNamesFromFile = args.shift();
       if (result.keepNamesFromFile === undefined) throw new Error('--keep-names-from-file requires a filename');
-    } else if (arg === '--listfiles' && result.command === 'luafind') {
+    } else if (!optionsEnded && arg === '--listfiles' && result.command === 'luafind') {
       result.listFiles = true;
-    } else if (result.command === 'build' && /^--(?:empty-)?(?:lua|gfx|gff|map|sfx|music)$/.test(arg)) {
+    } else if (!optionsEnded && result.command === 'build' && /^--(?:empty-)?(?:lua|gfx|gff|map|sfx|music)$/.test(arg)) {
       const match = arg.match(/^--(empty-)?(lua|gfx|gff|map|sfx|music)$/);
       const key = match[1] ? `empty_${match[2]}` : match[2];
       result[key] = match[1] ? true : args.shift();
       if (!match[1] && result[key] === undefined) throw new Error(`${arg} requires a filename`);
-    } else if (result.command === 'build' && arg === '--lua-path') {
+    } else if (!optionsEnded && result.command === 'build' && arg === '--lua-path') {
       result.luaPath = args.shift();
       if (result.luaPath === undefined) throw new Error('--lua-path requires a value');
-    } else if (result.command === 'build' && arg === '--optimize-tokens') {
+    } else if (!optionsEnded && result.command === 'build' && arg === '--optimize-tokens') {
       result.optimizeTokens = true;
-    } else if (result.command === 'build' && arg === '--lua-format') {
+    } else if (!optionsEnded && result.command === 'build' && arg === '--lua-format') {
       result.luaFormat = true;
-    } else if (result.command === 'build' && arg === '--lua-minify') {
+    } else if (!optionsEnded && result.command === 'build' && arg === '--lua-minify') {
       result.luaMinify = true;
-    } else if (result.command === 'build' && arg === '--keep-all-names') {
+    } else if (!optionsEnded && result.command === 'build' && arg === '--keep-all-names') {
       result.keepAllNames = true;
-    } else if (result.command === 'build' && arg === '--keep-names-from-file') {
+    } else if (!optionsEnded && result.command === 'build' && arg === '--keep-names-from-file') {
       result.keepNamesFromFile = args.shift();
       if (result.keepNamesFromFile === undefined) throw new Error('--keep-names-from-file requires a filename');
-    } else if (arg.startsWith('-')) {
+    } else if (!optionsEnded && arg.startsWith('-')) {
       throw new Error(`unknown option: ${arg}`);
     } else {
       result.filename.push(arg);
