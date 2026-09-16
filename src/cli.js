@@ -95,18 +95,26 @@ function csvField(value) {
 function statsRows(filenames, readFile = fs.readFileSync) {
   const rows = [];
   const errors = [];
+  const sequence = [];
   for (const filename of filenames) {
+    if (!filename.endsWith('.p8') && !filename.endsWith('.p8.png')) {
+      errors.push({ filename, error: new Error('filename must end in .p8 or .p8.png'), unsupported: true });
+      sequence.push({ filename, unsupported: true });
+      continue;
+    }
     try {
       // Python's stats accepts .p8 and .p8.png.  PNG transport is deliberately
       // left to the async file API for now; this sync CLI slice handles .p8.
       if (!filename.endsWith('.p8')) throw new Error('filename must end in .p8 (use mainAsync for .p8.png)');
       const source = readFile(filename);
-      rows.push({ filename, source, stats: cartridgeStats(source) });
+      const row = { filename, source, stats: cartridgeStats(source) };
+      rows.push(row); sequence.push({ row });
     } catch (error) {
-      errors.push({ filename, error });
+      const failure = { filename, error };
+      errors.push(failure); sequence.push({ failure });
     }
   }
-  return { rows, errors };
+  return { rows, errors, sequence };
 }
 
 function formatStats(rows, csv = false) {
@@ -132,30 +140,43 @@ function formatStats(rows, csv = false) {
 function runStats(args, io = {}) {
   const write = io.write || ((text) => process.stdout.write(text));
   const error = io.error || ((text) => process.stderr.write(text));
-  const { rows, errors } = statsRows(args.filename, io.readFile || fs.readFileSync);
-  for (const item of errors) error(`${item.filename}: ${item.error.message}\n${item.filename}: could not load cart\n`);
-  if (rows.length) write(formatStats(rows, args.csv));
-  return errors.length && args.filename.length === 1 ? 1 : 0;
+  const { errors, sequence } = statsRows(args.filename, io.readFile || fs.readFileSync);
+  if (args.csv) write(formatStats([], true));
+  for (const item of sequence) {
+    if (item.unsupported) error(`${item.filename}: filename must end in .p8 or .p8.png\n`);
+    else if (item.failure) error(`${item.failure.filename}: ${item.failure.error.message}\n${item.failure.filename}: could not load cart\n`);
+    else if (args.csv) {
+      const all = formatStats([item.row], true);
+      write(all.slice(all.indexOf('\r\n') + 2));
+    } else write(formatStats([item.row], false));
+  }
+  return errors.some((item) => !item.unsupported) && args.filename.length === 1 ? 1 : 0;
 }
 
 function runListing(args, io = {}) {
   const write = io.write || ((text) => process.stdout.write(text));
   const error = io.error || ((text) => process.stderr.write(text));
   const read = io.readFile || fs.readFileSync;
-  const { rows, errors } = args.command === 'listrawlua'
+  const { rows, errors, sequence } = args.command === 'listrawlua'
     ? (() => {
-      const rawRows = [], rawErrors = [];
+      const rawRows = [], rawErrors = [], rawSequence = [];
       for (const filename of args.filename) {
+        if (!filename.endsWith('.p8') && !filename.endsWith('.p8.png')) { rawSequence.push({ filename, unsupported: true }); continue; }
         try {
           if (!filename.endsWith('.p8')) throw new Error('filename must end in .p8 (PNG raw listing is async)');
-          rawRows.push({ filename, source: read(filename) });
-        } catch (exception) { rawErrors.push({ filename, error: exception }); }
+          const row = { filename, source: read(filename) }; rawRows.push(row); rawSequence.push({ row });
+        } catch (exception) { const failure = { filename, error: exception }; rawErrors.push(failure); rawSequence.push({ failure }); }
       }
-      return { rows: rawRows, errors: rawErrors };
+      return { rows: rawRows, errors: rawErrors, sequence: rawSequence };
     })()
     : statsRows(args.filename, read);
-  for (const item of errors) error(`${item.filename}: ${item.error.message}\n${item.filename}: could not load cart\n`);
-  for (const { filename, source } of rows) {
+  for (const item of sequence) {
+    if (item.unsupported) {
+      error(args.command === 'listrawlua' ? `${item.filename}: must be .p8 or .p8.png\n` : `${item.filename}: filename must end in .p8 or .p8.png\n`);
+      continue;
+    }
+    if (item.failure) { error(`${item.failure.filename}: ${item.failure.error.message}\n${item.failure.filename}: could not load cart\n`); continue; }
+    const { filename, source } = item.row;
     if (args.command === 'listlua') write((args.filename.length > 1 ? `=== ${filename} ===\n` : '') +
       listLua(source, { pure: args.pureLua, showLineNumbers: args.showLineNumbers }));
     else if (args.command === 'listrawlua') {
@@ -165,7 +186,8 @@ function runListing(args, io = {}) {
         `${args.showLineNumbers ? `${index}: ` : ''}${friendly(Buffer.from(line, 'latin1'))}`).join('') + '\n');
     } else write((args.filename.length > 1 ? `=== ${filename} ===\n` : '') + listTokens(source));
   }
-  return errors.length && args.filename.length === 1 ? 1 : 0;
+  if (args.command === 'listrawlua' && sequence.length === 1 && sequence[0].unsupported) return 1;
+  return errors.some((item) => !item.unsupported) && args.filename.length === 1 ? 1 : 0;
 }
 
 function runLuaFind(args, io = {}) {
@@ -183,6 +205,7 @@ function runLuaFind(args, io = {}) {
   }
   let failed = false;
   for (const filename of filenames) {
+    if (!filename.endsWith('.p8') && !filename.endsWith('.p8.png')) { error(`${filename}: filename must end in .p8 or .p8.png\n`); continue; }
     try {
       if (!filename.endsWith('.p8')) throw new Error('filename must end in .p8 (PNG search is async)');
       const source = require('./picotool').parseP8((io.readFile || fs.readFileSync)(filename));
@@ -207,6 +230,7 @@ function runWrite(args, io = {}) {
   const error = io.error || ((text) => process.stderr.write(text));
   let failed = false;
   for (const filename of args.filename) {
+    if (!filename.endsWith('.p8') && !filename.endsWith('.p8.png')) { error(`${filename}: filename must end in .p8 or .p8.png\n`); continue; }
     try {
       if (!filename.endsWith('.p8')) throw new Error('filename must end in .p8 (PNG writing is async)');
       const output = outputName(filename, args.command, args.overwrite);
@@ -302,6 +326,7 @@ function runPrintAst(args, io = {}) {
   const error = io.error || ((text) => process.stderr.write(text));
   let failed = false;
   for (const filename of args.filename) {
+    if (!filename.endsWith('.p8') && !filename.endsWith('.p8.png')) { error(`${filename}: filename must end in .p8 or .p8.png\n`); continue; }
     try {
       if (!filename.endsWith('.p8')) throw new Error('filename must end in .p8 or .p8.png');
       const source = p8LuaSource((io.readFile || fs.readFileSync)(filename));
@@ -317,6 +342,7 @@ async function asyncPrintAst(args, io = {}) {
   const error = io.error || ((text) => process.stderr.write(text));
   let failed = false;
   for (const filename of args.filename) {
+    if (!filename.endsWith('.p8') && !filename.endsWith('.p8.png')) { error(`${filename}: filename must end in .p8 or .p8.png\n`); continue; }
     try {
       const input = await (io.readFile || fs.promises.readFile)(filename);
       let source;
@@ -372,8 +398,12 @@ async function asyncBuild(args, io = {}) {
 }
 
 async function asyncStatsRows(filenames, readFile = fs.promises.readFile) {
-  const rows = [], errors = [];
+  const rows = [], errors = [], sequence = [];
   for (const filename of filenames) {
+    if (!filename.endsWith('.p8') && !filename.endsWith('.p8.png')) {
+      errors.push({ filename, error: new Error('filename must end in .p8 or .p8.png'), unsupported: true });
+      sequence.push({ filename, unsupported: true }); continue;
+    }
     try {
       const bytes = await readFile(filename);
       let stats;
@@ -383,10 +413,10 @@ async function asyncStatsRows(filenames, readFile = fs.promises.readFile) {
         const lua = require('./picotool').decodeP8scii(cartridge.code.code.slice(0, cartridge.code.codeLength));
         stats = cartridgeStats({ format: 'p8', version: cartridge.version, sections: { lua: [lua] } });
       } else throw new Error('filename must end in .p8 or .p8.png');
-      rows.push({ filename, stats });
-    } catch (error) { errors.push({ filename, error }); }
+      const row = { filename, stats }; rows.push(row); sequence.push({ row });
+    } catch (error) { const failure = { filename, error }; errors.push(failure); sequence.push({ failure }); }
   }
-  return { rows, errors };
+  return { rows, errors, sequence };
 }
 
 function p8FromPngCartridge(cartridge) {
@@ -407,24 +437,26 @@ async function asyncListing(args, io = {}) {
   const write = io.write || ((text) => process.stdout.write(text));
   const error = io.error || ((text) => process.stderr.write(text));
   const read = io.readFile || fs.promises.readFile;
-  const rows = [], errors = [];
+  let failures = 0;
   for (const filename of args.filename) {
+    if (!filename.endsWith('.p8') && !filename.endsWith('.p8.png')) { error(`${filename}: filename must end in .p8 or .p8.png\n`); continue; }
     try {
-      if (filename.endsWith('.p8')) rows.push({ filename, source: await read(filename) });
+      let source;
+      if (filename.endsWith('.p8')) source = await read(filename);
       else if (filename.endsWith('.p8.png')) {
         const { cartridge } = await readP8Png(await read(filename));
-        rows.push({ filename, source: p8FromPngCartridge(cartridge) });
-      } else throw new Error('filename must end in .p8 or .p8.png');
-    } catch (exception) { errors.push({ filename, error: exception }); }
+        source = p8FromPngCartridge(cartridge);
+      }
+      const prefix = args.filename.length > 1 ? `=== ${filename} ===\n` : '';
+      write(prefix + (args.command === 'listlua'
+        ? listLua(source, { pure: args.pureLua, showLineNumbers: args.showLineNumbers })
+        : listTokens(source)));
+    } catch (exception) {
+      failures += 1;
+      error(`${filename}: ${exception.message}\n${filename}: could not load cart\n`);
+    }
   }
-  for (const item of errors) error(`${item.filename}: ${item.error.message}\n${item.filename}: could not load cart\n`);
-  for (const { filename, source } of rows) {
-    const prefix = args.filename.length > 1 ? `=== ${filename} ===\n` : '';
-    write(prefix + (args.command === 'listlua'
-      ? listLua(source, { pure: args.pureLua, showLineNumbers: args.showLineNumbers })
-      : listTokens(source)));
-  }
-  return errors.length && args.filename.length === 1 ? 1 : 0;
+  return failures && args.filename.length === 1 ? 1 : 0;
 }
 
 async function asyncWrite(args, io = {}) {
@@ -434,6 +466,7 @@ async function asyncWrite(args, io = {}) {
   const writeFile = io.writeFile || fs.promises.writeFile;
   let failed = false;
   for (const filename of args.filename) {
+    if (!filename.endsWith('.p8') && !filename.endsWith('.p8.png')) { error(`${filename}: filename must end in .p8 or .p8.png\n`); continue; }
     try {
       const input = await read(filename);
       const output = outputName(filename, args.command, args.overwrite);
@@ -475,6 +508,7 @@ async function asyncLuaFind(args, io = {}) {
   let failed = false;
   const read = io.readFile || fs.promises.readFile;
   for (const filename of filenames) {
+    if (!filename.endsWith('.p8') && !filename.endsWith('.p8.png')) { error(`${filename}: filename must end in .p8 or .p8.png\n`); continue; }
     try {
       const input = await read(filename);
       const source = filename.endsWith('.p8.png')
@@ -500,10 +534,17 @@ async function mainAsync(argv = process.argv.slice(2), io = {}) {
     if (args.command !== 'stats') return main(argv, io);
     const write = io.write || ((text) => process.stdout.write(text));
     const error = io.error || ((text) => process.stderr.write(text));
-    const { rows, errors } = await asyncStatsRows(args.filename, io.readFile || fs.promises.readFile);
-    for (const item of errors) error(`${item.filename}: ${item.error.message}\n${item.filename}: could not load cart\n`);
-    if (rows.length) write(formatStats(rows, args.csv));
-    return errors.length && args.filename.length === 1 ? 1 : 0;
+    const { errors, sequence } = await asyncStatsRows(args.filename, io.readFile || fs.promises.readFile);
+    if (args.csv) write(formatStats([], true));
+    for (const item of sequence) {
+      if (item.unsupported) error(`${item.filename}: filename must end in .p8 or .p8.png\n`);
+      else if (item.failure) error(`${item.failure.filename}: ${item.failure.error.message}\n${item.failure.filename}: could not load cart\n`);
+      else if (args.csv) {
+        const all = formatStats([item.row], true);
+        write(all.slice(all.indexOf('\r\n') + 2));
+      } else write(formatStats([item.row], false));
+    }
+    return errors.some((item) => !item.unsupported) && args.filename.length === 1 ? 1 : 0;
   } catch (error) {
     (io.error || ((text) => process.stderr.write(text)))(`picotool: ${error.message}\n`);
     return 2;

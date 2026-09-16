@@ -6,7 +6,7 @@ The supported JavaScript behavior is checked by running Node and Python over the
 
 ### CLI orchestration and presentation
 
-- Match multi-file headings, error continuation, argument parsing, and exit codes.
+- Multi-file text-cart headings, output/error ordering, unsupported-extension continuation, and statuses now match Python for `stats`, `listlua`, `listtokens`, and `printast`; unsupported-extension statuses also match for `listrawlua`, `luafind`, and writer commands. Mixed text/PNG JavaScript paths preserve the same order. Compare remaining argument-parser diagnostics and fatal load/error exit cases against Python.
 - Match remaining filesystem-wrapper edge cases for `writep8`, `luamin`, and `luafmt`, including `luafmt --overwrite` for text carts. Writer commands now report the output path after a successful cart load and before a write attempt, as Python does. The vendored Python writer does not prompt before overwrite.
 - Extend the `p8tool` entry point beyond the implemented `stats`, `listlua`, `listtokens`, `writep8`, `luamin`, `luafmt`, `luafind`, `build`, and `printast` slices for text and PNG carts; raw listing is text-only. `build` accepts Lua module sources, `--lua-path` module lookups, and section overrides, including PNG carts, but its name-preservation options and some filesystem/argument edge cases need Python comparison. `printast` text output matches Python byte-for-byte on focused and vendored-cart fixtures; PNG output matches the equivalent text cart, because the Python PNG reader dependency is absent here. Check remaining output naming, presentation and argument edge cases against Python.
 

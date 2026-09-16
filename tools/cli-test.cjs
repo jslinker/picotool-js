@@ -8,6 +8,44 @@ const { tmpdir } = require('node:os');
 const { spawnSync } = require('node:child_process');
 const { formatStats, main, mainAsync, parseArgs, statsRows } = require('../src/cli');
 
+const pythonEventOracle = String.raw`import argparse,json,sys
+from pico8 import tool,util
+events=[]
+util.write=lambda value: events.append(['out',value])
+util.error=lambda value: events.append(['err',value])
+args=argparse.Namespace(filename=sys.argv[2:],csv=False,show_line_numbers=False,pure_lua=False,overwrite=False,listfiles=False,keep_all_names=False)
+name='do_'+sys.argv[1] if sys.argv[1] in ('writep8','luamin','luafmt') else sys.argv[1]
+status=getattr(tool,name)(args)
+print(json.dumps({'status':status,'events':events}))`;
+function collapseEvents(events) {
+  const collapsed = [];
+  for (const [channel, value] of events) {
+    if (collapsed.at(-1)?.[0] === channel) collapsed.at(-1)[1] += value;
+    else collapsed.push([channel, value]);
+  }
+  return collapsed;
+}
+function comparePythonEvents(command, filenames) {
+  const result = spawnSync('python3', ['-c', pythonEventOracle, command, ...filenames], {
+    env: { ...process.env, PYTHONPATH: '../../vendor/picotool' },
+  });
+  assert.strictEqual(result.status, 0, result.stderr.toString());
+  const expected = JSON.parse(result.stdout.toString());
+  const events = [];
+  const status = main([command, ...filenames], {
+    write: (value) => events.push(['out', value]), error: (value) => events.push(['err', value]),
+  });
+  assert.strictEqual(status, expected.status, `${command}: exit status`);
+  assert.deepStrictEqual(collapseEvents(events), collapseEvents(expected.events), `${command}: ordered output/error events`);
+}
+const upstreamCart = resolve(__dirname, '../../../vendor/picotool/tests/testdata/test_cart.p8');
+for (const command of ['stats', 'listlua', 'listtokens', 'printast']) {
+  comparePythonEvents(command, [upstreamCart, 'missing-extension.txt', upstreamCart]);
+  comparePythonEvents(command, ['missing-extension.txt']);
+}
+for (const command of ['listrawlua', 'writep8', 'luamin', 'luafmt']) comparePythonEvents(command, ['missing-extension.txt']);
+comparePythonEvents('luafind', ['pattern', 'missing-extension.txt']);
+
 const cart = [
   'pico-8 cartridge // http://www.pico-8.com\n', 'version 33\n', '__lua__\n',
   '-- Title\n', '-- Byline\n', 'print("hello")\n',
@@ -254,6 +292,16 @@ mainAsync(['stats', png], {
     })));
   }).then((statuses) => {
     assert.deepStrictEqual(statuses, [0, 0]);
+    return Promise.all(['stats', 'listlua', 'listtokens', 'printast'].map(async (command) => {
+      const events = [];
+      const status = await mainAsync([command, png, 'missing-extension.txt', upstreamCart], {
+        write: (value) => events.push(['out', value]), error: (value) => events.push(['err', value]),
+      });
+      assert.strictEqual(status, 0, `${command}: mixed text/PNG status`);
+      assert.deepStrictEqual(collapseEvents(events).map(([channel]) => channel), ['out', 'err', 'out'], `${command}: mixed text/PNG ordering`);
+      assert.match(events.find(([channel]) => channel === 'err')[1], /filename must end in \.p8 or \.p8\.png/);
+    }));
+  }).then(() => {
     console.log('cli tests passed');
   });
 }).catch((error) => { throw error; });
