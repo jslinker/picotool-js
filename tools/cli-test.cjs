@@ -206,11 +206,21 @@ try {
     error: () => {},
   }), 1);
   assert.match(failedWriteOutput, /game\.p8 -> .*game_fmt\.p8/);
+  let attemptedWrites = 0;
+  assert.strictEqual(main(['writep8', writableCart, writableCart], {
+    write: () => {}, writeFile: () => { attemptedWrites += 1; throw new Error('simulated write failure'); }, error: () => {},
+  }), 1);
+  assert.strictEqual(attemptedWrites, 1, 'writer must stop after an output write failure');
   let missingWriteOutput = '';
   assert.strictEqual(main(['writep8', join(testDirectory, 'missing.p8')], {
     write: (text) => { missingWriteOutput += text; }, error: () => {},
   }), 1);
   assert.strictEqual(missingWriteOutput, '');
+  let recoveredWrite = '';
+  assert.strictEqual(main(['writep8', join(testDirectory, 'missing.p8'), writableCart], {
+    write: (text) => { recoveredWrite += text; }, error: () => {},
+  }), 1);
+  assert.match(recoveredWrite, /game\.p8 -> .*game_fmt\.p8/, 'writer must continue after an input load failure');
 } finally { rmSync(testDirectory, { recursive: true, force: true }); }
 
 const buildDirectory = mkdtempSync(join(tmpdir(), 'picotool-build-test-'));
@@ -433,6 +443,15 @@ mainAsync(['stats', png], {
       assert.deepStrictEqual(statuses, [0, 0]);
       assert.notDeepStrictEqual(kept, plain, 'PNG keep-names file must affect written cart bytes');
     }).finally(() => { rmSync(directory, { recursive: true, force: true }); });
+  }).then(() => {
+    let attempts = 0;
+    return mainAsync(['writep8', png, png], {
+      writeFile: async () => { attempts += 1; throw new Error('simulated async write failure'); },
+      write: () => {}, error: () => {},
+    }).then((status) => {
+      assert.strictEqual(status, 1);
+      assert.strictEqual(attempts, 1, 'async writer must stop after an output write failure');
+    });
   }).then(() => {
     console.log('cli tests passed');
   });

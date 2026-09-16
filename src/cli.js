@@ -247,17 +247,20 @@ function runWrite(args, io = {}) {
   let failed = false;
   for (const filename of args.filename) {
     if (!filename.endsWith('.p8') && !filename.endsWith('.p8.png')) { error(`${filename}: filename must end in .p8 or .p8.png\n`); continue; }
+    let writeStarted = false;
     try {
       if (!filename.endsWith('.p8')) throw new Error('filename must end in .p8 (PNG writing is async)');
       const output = outputName(filename, args.command, args.overwrite);
       const source = require('./picotool').parseP8((io.readFile || fs.readFileSync)(filename));
       write(`${filename} -> ${output}\n`);
+      writeStarted = true;
       const luaWriter = args.command === 'luamin' ? 'minify' : args.command === 'luafmt' ? 'ast-format' : undefined;
       const bytes = writeP8(source, { luaWriter, minifyOptions: { keepAllNames: args.keepAllNames, keepNames: keepNamesFor(args, io.readFile || fs.readFileSync) }, formatOptions: { indentwidth: args.indentwidth ?? 2 } });
       (io.writeFile || fs.writeFileSync)(output, bytes);
     } catch (exception) {
       failed = true;
       error(`${filename}: ${exception.message}\n`);
+      if (writeStarted) return 1;
     }
   }
   return failed ? 1 : 0;
@@ -485,18 +488,21 @@ async function asyncWrite(args, io = {}) {
   let failed = false;
   for (const filename of args.filename) {
     if (!filename.endsWith('.p8') && !filename.endsWith('.p8.png')) { error(`${filename}: filename must end in .p8 or .p8.png\n`); continue; }
+    let writeStarted = false;
     try {
       const input = await read(filename);
       const output = outputName(filename, args.command, args.overwrite);
       if (filename.endsWith('.p8')) {
         const parsed = require('./picotool').parseP8(input);
         write(`${filename} -> ${output}\n`);
+        writeStarted = true;
         const luaWriter = args.command === 'luamin' ? 'minify' : args.command === 'luafmt' ? 'ast-format' : undefined;
         const keepNames = args.keepNamesFromFile ? namesFromFileContents(await read(args.keepNamesFromFile)) : [];
         await writeFile(output, writeP8(parsed, { luaWriter, minifyOptions: { keepAllNames: args.keepAllNames, keepNames }, formatOptions: { indentwidth: args.indentwidth ?? 2 } }));
       } else if (filename.endsWith('.p8.png')) {
         const { cartridge } = await readP8Png(input);
         write(`${filename} -> ${output}\n`);
+        writeStarted = true;
         let luaBytes = cartridge.code.code.slice(0, cartridge.code.codeLength);
         if (args.command !== 'writep8') {
           const parsed = p8FromPngCartridge(cartridge);
@@ -507,7 +513,10 @@ async function asyncWrite(args, io = {}) {
         }
         await writeFile(output, await writeP8Png(cartridge, input, luaBytes));
       } else throw new Error('filename must end in .p8 or .p8.png');
-    } catch (exception) { failed = true; error(`${filename}: ${exception.message}\n`); }
+    } catch (exception) {
+      failed = true; error(`${filename}: ${exception.message}\n`);
+      if (writeStarted) return 1;
+    }
   }
   return failed ? 1 : 0;
 }
