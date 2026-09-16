@@ -4,6 +4,28 @@ const cp = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const { parseLua } = require('../src/lua-ast-model');
+const astExports = require('../src/lua-ast-model');
+
+const classOraclePy = String.raw`import json
+from pico8.lua import parser
+result={}
+for name,cls in vars(parser).items():
+  if isinstance(cls,type) and issubclass(cls,parser.Node) and cls is not parser.Node and name==cls.__name__:
+    result[name]={'name':cls._name,'fields':list(cls._fields),'children':cls._children}
+print(json.dumps(result))`;
+const classResult = cp.spawnSync('python3', ['-c', classOraclePy], { env: { ...process.env, PYTHONPATH: '../../vendor/picotool' } });
+assert.equal(classResult.status, 0, classResult.stderr.toString());
+const pythonClasses = JSON.parse(classResult.stdout.toString());
+const javascriptClasses = {};
+for (const [name, constructor] of Object.entries(astExports)) {
+  if (typeof constructor === 'function' && constructor.prototype instanceof astExports.Node) {
+    javascriptClasses[name] = { name: constructor._name, fields: constructor._fields, children: constructor._children };
+    assert.equal(constructor.prototype._name, constructor._name);
+    assert.deepEqual(constructor.prototype._fields, constructor._fields);
+    assert.equal(constructor.prototype._children, null);
+  }
+}
+assert.deepEqual(javascriptClasses, pythonClasses, 'Python AST class inventory and metadata mismatch');
 
 const py = String.raw`import json,sys
 from pico8.lua import lexer,parser

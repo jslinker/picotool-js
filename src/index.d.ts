@@ -217,8 +217,6 @@ export class TableConstructor extends Node { constructor(fields: Node[], options
 export class FieldExp extends Node { constructor(exp: Node, options?: AstNodeOptions); exp: Node; }
 export class FieldExpKey extends Node { constructor(key_exp: Node, exp: Node, options?: AstNodeOptions); key_exp: Node; exp: Node; }
 export class FieldNamedKey extends Node { constructor(key_name: TokName, exp: Node, options?: AstNodeOptions); key_name: TokName; exp: Node; }
-export class FieldOtherThing extends Node { constructor(options?: AstNodeOptions); }
-export class FieldNamed extends Node { constructor(options?: AstNodeOptions); }
 export class AstParser { constructor(source: string | Uint8Array); parse(): Chunk; }
 export function parseLua(source: string | Uint8Array): Chunk;
 export function parseLuaAst(source: string | Uint8Array): Chunk;

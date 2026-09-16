@@ -366,7 +366,7 @@ function tokenAtOffset(tokens, offset, source) {
   return candidate;
 }
 
-const PYTHON_NODE_TYPES = ['Chunk', 'StatAssignment', 'StatFunctionCall', 'StatDo', 'StatWhile', 'StatRepeat', 'StatIf', 'StatForStep', 'StatForIn', 'StatFunction', 'StatLocalFunction', 'StatLocalAssignment', 'StatGoto', 'StatLabel', 'StatBreak', 'StatReturn', 'FunctionName', 'FunctionArgs', 'VarList', 'VarName', 'VarIndex', 'VarAttribute', 'NameList', 'ExpList', 'ExpValue', 'VarargDots', 'ExpBinOp', 'ExpUnOp', 'FunctionCall', 'FunctionCallMethod', 'Function', 'FunctionBody', 'TableConstructor', 'FieldOtherThing', 'FieldNamed', 'FieldExp', 'FieldExpKey', 'FieldNamedKey'];
+const PYTHON_NODE_TYPES = ['Chunk', 'StatAssignment', 'StatFunctionCall', 'StatDo', 'StatWhile', 'StatRepeat', 'StatIf', 'StatForStep', 'StatForIn', 'StatFunction', 'StatLocalFunction', 'StatLocalAssignment', 'StatGoto', 'StatLabel', 'StatBreak', 'StatReturn', 'FunctionName', 'FunctionArgs', 'VarList', 'VarName', 'VarIndex', 'VarAttribute', 'NameList', 'ExpList', 'ExpValue', 'VarargDots', 'ExpBinOp', 'ExpUnOp', 'FunctionCall', 'FunctionCallMethod', 'Function', 'FunctionBody', 'TableConstructor', 'FieldExp', 'FieldExpKey', 'FieldNamedKey'];
 const NAMED_FIELDS = { Chunk:['stats'], StatAssignment:['varlist','assignop','explist'], StatFunctionCall:['functioncall'], StatDo:['block'], StatWhile:['exp','block'], StatRepeat:['block','exp'], StatIf:['exp_block_pairs'], StatForStep:['name','exp_init','exp_end','exp_step','block'], StatForIn:['namelist','explist','block'], StatFunction:['funcname','funcbody'], StatLocalFunction:['funcname','funcbody'], StatLocalAssignment:['namelist','explist'], StatGoto:['label'], StatLabel:['label'], StatReturn:['explist'], FunctionName:['namepath','methodname'], FunctionArgs:['explist'], VarList:['vars'], VarName:['name'], VarIndex:['exp_prefix','exp_index'], VarAttribute:['exp_prefix','attr_name'], NameList:['names'], ExpList:['exps'], ExpValue:['value'], VarargDots:[], ExpBinOp:['exp1','binop','exp2'], ExpUnOp:['unop','exp'], FunctionCall:['exp_prefix','args'], FunctionCallMethod:['exp_prefix','methodname','args'], Function:['funcbody'], FunctionBody:['parlist','dots','block'], TableConstructor:['fields'], FieldExp:['exp'], FieldExpKey:['key_exp','exp'], FieldNamedKey:['key_name','exp'] };
 const exportsMap = { Node, LuaNode: Node, LuaAstError, parseLua, parseLuaAst: parseLua, AstParser };
 for (const name of PYTHON_NODE_TYPES) {
@@ -384,6 +384,14 @@ for (const name of PYTHON_NODE_TYPES) {
     }
   };
   Object.defineProperty(Named, 'name', { value: name });
+  const classFields = Object.freeze([...(NAMED_FIELDS[name] || [])]);
+  for (const target of [Named, Named.prototype]) {
+    Object.defineProperties(target, {
+      _name: { value: name, enumerable: true, writable: true },
+      _fields: { value: classFields, enumerable: true, writable: true },
+      _children: { value: null, enumerable: true, writable: true },
+    });
+  }
   NODE_CLASS_BY_TYPE[name] = Named; exportsMap[name] = Named;
 }
 module.exports = Object.freeze(exportsMap);

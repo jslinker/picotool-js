@@ -4,11 +4,6 @@ The supported JavaScript behavior is checked by running Node and Python over the
 
 ## Remaining parity items
 
-### Public parser AST model
-
-- Public `parseLua()` exposes Python-named AST classes, fields, token spans, and token-valued fields. Its recursive Python oracle matches 15 focused programs, all 72 Python-accepted parser-test inputs (33 fully consumed programs and 39 fragment/residual cases), and upstream text-cart fixtures; token regeneration also matches on the tested carts. Malformed assignment/call starts still raise rather than being treated as harmless residual input.
-- `BaseASTWalker` exposes Python-style named default handlers for each exported AST class; its node/token/value traversal trace, walker-driven name/number token edits, and custom-handler replacement of `VarName`, binary operands, table fields, and `if` blocks match Python on all 72 accepted parser-test inputs, focused programs, and upstream text-cart fixtures, including Python's per-byte goto/label values. Named AST constructors validate positional field counts, accept explicit `start`/`end` token spans and arbitrary metadata, and have optional declaration-file signatures; the runtime remains pure JavaScript. Token-group layouts and regeneration match Python throughout the same corpus. Python class-level AST metadata (`_fields` and `_children`) still needs comparison.
-
 ### CLI orchestration and presentation
 
 - Match multi-file headings, error continuation, argument parsing, and exit codes.
@@ -33,5 +28,7 @@ The supported JavaScript behavior is checked by running Node and Python over the
 - `BaseFormatter` inheritance, Python exception inheritance, logging streams, temporary-file mechanics, and demo scripts are excluded unless a JavaScript consumer needs their observable behavior.
 
 ## Completed output parity
+
+Public `parseLua()` exposes the exact vendored Python AST class inventory and class-level metadata, fields, token spans, and token-valued fields. The recursive oracle matches 15 focused programs, all 72 Python-accepted parser-test inputs (33 fully consumed programs and 39 fragment/residual cases), and upstream text-cart fixtures. Token-group layouts and regeneration match on the same corpus. `BaseASTWalker` named handlers, traversal traces, name/number token edits, and custom-handler replacement of names, binary operands, table fields, and `if` blocks match Python across the corpus and carts. The runtime remains pure JavaScript; optional declaration signatures support consumers.
 
 The parity harness currently covers text parsing and section serialization; all Lua writer modes; lexer and parser corpora; diagnostics; builds and includes; `require()` bundling; Pure Lua output; listings and token listings; statistics and compression; cartridge-memory writes; PNG decoding, embedding, writing, round trips, and PNG includes. The Node API also selects `.p8` and `.p8.png` transports by filename through `fromFile()` and `toFile()`, preserves an existing PNG label on overwrite, and reports unsupported extensions with a dedicated error. A Python-shaped `Game` class exposes the section fields, empty-game factory, compressed-size calculation, memory writes, and file methods in both camelCase and compatibility spellings. Public lexer results use Python-shaped token classes with source code, parsed values, positions, mutation, equality, and `matches()` behavior.
