@@ -169,6 +169,7 @@ export class Node {
   type: string;
   _name: string;
   _fields: string[];
+  _token_groups: Array<Token[] | [string | [string, ...number[]], Token[]]>;
   readonly start_pos: number | null;
   readonly end_pos: number | null;
   readonly tokens: IterableIterator<Token>;

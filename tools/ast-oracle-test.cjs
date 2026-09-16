@@ -38,6 +38,37 @@ function oracleTokens(source) {
   assert.equal(result.status, 0, result.stderr.toString());
   return JSON.parse(result.stdout.toString());
 }
+const groupOraclePy = String.raw`import json,sys
+from pico8.lua import lexer,parser
+s=sys.stdin.buffer.read(); l=lexer.Lexer(4); l.process_lines([s]); p=parser.Parser(4); p.process_tokens(l.tokens)
+def tok(t): return {'class':type(t).__name__,'code':t.code.decode('latin1'),'line':t._lineno,'char':t._charno}
+def groups(n):
+  result=[]
+  for g in n._token_groups:
+    if type(g)==tuple: result.append([list(g[0]) if type(g[0])==tuple else g[0],[tok(t) for t in g[1]]])
+    else: result.append([tok(t) for t in g])
+  return result
+def shape(x):
+  if isinstance(x,parser.Node): return {'type':x._name,'groups':groups(x),'fields':[shape(getattr(x,f)) for f in x._fields]}
+  if isinstance(x,(list,tuple)): return [shape(y) for y in x]
+  return None
+print(json.dumps(shape(p.root)))`;
+function oracleGroups(source) {
+  const result = cp.spawnSync('python3', ['-c', groupOraclePy], { input: Buffer.from(source, 'latin1'), env: { ...process.env, PYTHONPATH: '../../vendor/picotool' } });
+  assert.equal(result.status, 0, result.stderr.toString());
+  return JSON.parse(result.stdout.toString());
+}
+function canonGroups(node) {
+  return node._token_groups.map(group => {
+    const field = group.length === 2 && Array.isArray(group[1]) && (typeof group[0] === 'string' || Array.isArray(group[0]));
+    return field ? [group[0], group[1].map(canonJs)] : group.map(canonJs);
+  });
+}
+function canonGroupTree(value) {
+  if (value && typeof value === 'object' && Array.isArray(value._fields)) return { type: value.type, groups: canonGroups(value), fields: value._fields.map(field => canonGroupTree(value[field])) };
+  if (Array.isArray(value)) return value.map(canonGroupTree);
+  return null;
+}
 function canonJs(x) {
   if (x && typeof x === 'object' && typeof x.code === 'string' && typeof x.line === 'number') return { class: x.constructor.name, code: x.code, line: x.line, char: x.column };
   if (x && typeof x === 'object' && x.type && Array.isArray(x._fields)) {
@@ -98,6 +129,10 @@ assert.equal(wrapperTree.stats[0].explist.exps[0].value.type, 'FunctionCall');
 assert.equal(wrapperTree.stats[0].explist.exps[0].value.args.type, 'FunctionArgs');
 const tokenGroupSource = '--hi\nx = 1 --end\nprint(x)\n';
 assert.deepEqual([...parseLua(tokenGroupSource).tokens].map(canonJs), oracleTokens(tokenGroupSource), 'AST token-group regeneration mismatch');
+for (const source of ['x=1', 'if x then print(1) else print(2) end', tokenGroupSource]) {
+  const tree = parseLua(source);
+  assert.deepEqual(canonGroupTree(tree), oracleGroups(source), `AST token-group layout mismatch: ${source}`);
+}
 const replaceableTree = parseLua('x=1');
 replaceableTree.stats[0] = parseLua('y=2').stats[0];
 assert.equal([...replaceableTree.tokens].map(token => token.code).join(''), 'y=2', 'AST token groups must follow replaced child fields');
@@ -138,6 +173,7 @@ for (const file of fs.readdirSync(fixtureDir).filter(name => name.endsWith('.p8'
   const jsCanonical = canonJs(tree);
   if (firstDiff(jsCanonical, pyTree)) fixtureAstMismatches.push({ file, paths: diffPaths(jsCanonical, pyTree, '$', [], 20) });
   assert.deepEqual([...tree.tokens].map(canonJs), oracleTokens(source), `upstream text-cart token groups mismatch: ${file}`);
+  assert.deepEqual(canonGroupTree(tree), oracleGroups(source), `upstream text-cart token-group layout mismatch: ${file}`);
 }
 console.log('upstream text-cart fixture parse checks passed');
 console.log('upstream text-cart recursive mismatches:', JSON.stringify(fixtureAstMismatches, null, 2));
@@ -162,6 +198,7 @@ const corpusResult = cp.spawnSync('python3', ['-c', corpusPy], { cwd: process.cw
 assert.equal(corpusResult.status, 0, corpusResult.stderr.toString());
 const parserCorpus = JSON.parse(corpusResult.stdout.toString());
 let corpusAccepted = 0, corpusFullPrograms = 0, corpusFragments = 0, corpusExact = 0, corpusMismatched = 0, corpusJsFailures = 0; const corpusMismatchDetails = [], corpusFailureDetails = [];
+let corpusGroupExact = 0; const corpusGroupMismatches = [];
 function firstDiff(a, b, path = '$') {
   if (Object.is(a, b)) return null;
   if (typeof a !== typeof b || a === null || b === null) return path;
@@ -187,9 +224,14 @@ for (const [encoded, accepted, pyEnd, pyTokenCount] of parserCorpus) {
   corpusAccepted += 1; if (pyEnd === pyTokenCount) corpusFullPrograms += 1; else corpusFragments += 1; const source = Buffer.from(encoded, 'base64').toString('latin1');
   let jsTree; try { jsTree = parseLua(source); } catch (_) { corpusJsFailures += 1; corpusFailureDetails.push(source.slice(0, 80)); continue; }
   try { const jsCanon = canonJs(jsTree), pyCanon = oracle(source); assert.deepEqual(jsCanon, pyCanon); corpusExact += 1; } catch (_) { corpusMismatched += 1; corpusMismatchDetails.push({ source, pyEnd, pyTokenCount, jsEnd: jsTree.end_pos, paths: diffPaths(canonJs(jsTree), oracle(source), '$', [], 8) }); }
+  try { assert.deepEqual(canonGroupTree(jsTree), oracleGroups(source)); corpusGroupExact += 1; }
+  catch (_) { corpusGroupMismatches.push({ source: source.slice(0, 100), path: firstDiff(canonGroupTree(jsTree), oracleGroups(source)) }); }
 }
 console.log(`vendored parser corpus: ${parserCorpus.length} total, ${corpusAccepted} accepted (${corpusFullPrograms} full programs, ${corpusFragments} fragments/residual), ${corpusExact} exact, ${corpusMismatched} mismatched, ${corpusJsFailures} JS parse failures`);
 console.log('corpus mismatch diagnostics:', JSON.stringify(corpusMismatchDetails, null, 2));
 console.log('corpus JS parse-failure samples:', corpusFailureDetails);
+console.log(`corpus token-group layouts: ${corpusGroupExact}/${corpusAccepted} exact`);
+console.log('corpus token-group mismatch diagnostics:', corpusGroupMismatches);
 assert.equal(corpusMismatched, 0, 'accepted-input Python AST structural mismatches');
 assert.equal(corpusJsFailures, 0, 'accepted-input JavaScript AST parse failures');
+assert.equal(corpusGroupMismatches.length, 0, 'accepted-input Python token-group layout mismatches');

@@ -25,11 +25,23 @@ class Node {
     this._token_groups = [];
     const add = (field, value) => {
       if (value instanceof Node) {
-        this._token_groups.push({ before: tokenlist.slice(position, value.start_pos), field });
+        this._token_groups.push([field, tokenlist.slice(position, value.start_pos)]);
         value.storeTokenGroups(tokenlist);
         position = value.end_pos;
+      } else if (field === 'exp_block_pairs' && Array.isArray(value)) {
+        value.forEach((pair, index) => {
+          if (pair[0] != null) add([field, index, 0], pair[0]);
+          add([field, index, 1], pair[1]);
+        });
       } else if (Array.isArray(value)) {
         value.forEach((item, index) => add(Array.isArray(field) ? [...field, index] : [field, index], item));
+      } else if (typeof value === 'string') {
+        // Python treats a bytes/string-valued AST field as an iterable here.
+        // Goto and label names therefore create one literal group per byte.
+        for (let index = 0; index < value.length; index += 1) {
+          this._token_groups.push(tokenlist.slice(position, position + 1));
+          position += 1;
+        }
       } else {
         this._token_groups.push(tokenlist.slice(position, position + 1));
         position += 1;
@@ -42,10 +54,11 @@ class Node {
   store_token_groups(tokenlist) { return this.storeTokenGroups(tokenlist); }
   *iterTokens() {
     for (const group of this._token_groups) {
-      if (Array.isArray(group)) yield* group;
+      const isFieldGroup = group.length === 2 && Array.isArray(group[1]) && (typeof group[0] === 'string' || Array.isArray(group[0]));
+      if (!isFieldGroup) yield* group;
       else {
-        yield* group.before;
-        const path = Array.isArray(group.field) ? group.field : [group.field];
+        yield* group[1];
+        const path = Array.isArray(group[0]) ? group[0] : [group[0]];
         const child = path.reduce((value, key) => value[key], this);
         yield* child.iterTokens();
       }
