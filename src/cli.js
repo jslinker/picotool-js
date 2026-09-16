@@ -290,12 +290,13 @@ function luaFilesFor(filename, luaPath) {
   return files;
 }
 
-function buildOptions(args, sources, existing) {
+function buildOptions(args, sources, existing, keepNames = []) {
   const empty = BUILD_DOMAINS.filter((domain) => args[`empty_${domain}`]);
   return {
     existing, sources, empty,
     luaMinify: args.luaMinify, luaFormat: args.luaFormat,
     luaPath: args.luaPath, optimizeTokens: args.optimizeTokens,
+    keepAllNames: args.keepAllNames, keepNames,
     indentwidth: args.indentwidth || 2,
   };
 }
@@ -322,7 +323,7 @@ function runBuild(args, io = {}) {
       else if (filename.endsWith('.p8')) sources[domain] = { format: 'p8', data: read(filename) };
       else throw new Error(`Unsupported file type for --${domain} arg.`);
     }
-    const bytes = buildP8(buildOptions(args, sources, existing));
+    const bytes = buildP8(buildOptions(args, sources, existing, keepNamesFor(args, read)));
     (io.writeFile || fs.writeFileSync)(output, bytes);
     if (!args.quiet) write(`${output}\n`);
     return 0;
@@ -402,7 +403,8 @@ async function asyncBuild(args, io = {}) {
       };
       else throw new Error(`Unsupported file type for --${domain} arg.`);
     }
-    const bytes = buildP8(buildOptions(args, sources, existing));
+    const keepNames = args.keepNamesFromFile ? namesFromFileContents(await read(args.keepNamesFromFile)) : [];
+    const bytes = buildP8(buildOptions(args, sources, existing, keepNames));
     if (output.endsWith('.p8')) await writeFile(output, bytes);
     else await fileApi.toFile(require('./picotool').parseP8(bytes), output);
     if (!args.quiet) write(`${output}\n`);

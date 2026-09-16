@@ -201,6 +201,28 @@ try {
     write: () => {}, error: (text) => { throw new Error(text); },
   }), 0);
   assert.match(require('fs').readFileSync(siblingOutput, 'utf8'), /package\._c\["sibling"\]/);
+  const namesFile = join(buildDirectory, 'names.txt');
+  const plainMinified = join(buildDirectory, 'plain-minified.p8');
+  const keepAllMinified = join(buildDirectory, 'keep-all-minified.p8');
+  const keepFileMinified = join(buildDirectory, 'keep-file-minified.p8');
+  require('fs').writeFileSync(luaFile, 'local player_score=1\nlocal enemy_score=2\nprint(player_score,enemy_score)\n');
+  require('fs').writeFileSync(namesFile, '# names\nplayer_score\n\n');
+  for (const [options, output] of [
+    [[], plainMinified], [['--keep-all-names'], keepAllMinified],
+    [['--keep-names-from-file', namesFile], keepFileMinified],
+  ]) {
+    assert.strictEqual(main(['build', '--lua', luaFile, '--lua-minify', ...options.flat(), output], {
+      write: () => {}, error: (text) => { throw new Error(text); },
+    }), 0);
+  }
+  const plainBuild = require('fs').readFileSync(plainMinified, 'utf8');
+  const keepAllBuild = require('fs').readFileSync(keepAllMinified, 'utf8');
+  const keepFileBuild = require('fs').readFileSync(keepFileMinified, 'utf8');
+  assert.doesNotMatch(plainBuild, /player_score/);
+  assert.match(keepAllBuild, /player_score/);
+  assert.match(keepAllBuild, /enemy_score/);
+  assert.match(keepFileBuild, /player_score/);
+  assert.doesNotMatch(keepFileBuild, /enemy_score/);
   assert.deepStrictEqual(parseArgs(['build', '--empty-gfx', outputFile]).empty_gfx, true);
   let buildError = '';
   assert.strictEqual(main(['build', '--lua', luaFile, '--empty-lua', outputFile], {
@@ -273,6 +295,8 @@ const pngBuildLua = join(pngBuildDirectory, 'main.lua');
 const pngBuildModuleDirectory = join(pngBuildDirectory, 'modules');
 const pngBuildModule = join(pngBuildModuleDirectory, 'module.lua');
 const pngBuildOutput = join(pngBuildDirectory, 'built.p8.png');
+const pngBuildKeepOutput = join(pngBuildDirectory, 'built-keep.p8.png');
+const pngBuildNames = join(pngBuildDirectory, 'names.txt');
 require('fs').mkdirSync(pngBuildModuleDirectory);
 require('fs').writeFileSync(pngBuildLua, 'require("module")\nprint("png")\n');
 require('fs').writeFileSync(pngBuildModule, 'png_module=true\n');
@@ -286,6 +310,22 @@ mainAsync(['build', '--lua', pngBuildLua, '--lua-path', 'modules/?.lua', pngBuil
   });
 }).then((status) => {
   assert.strictEqual(status, 0);
+  require('fs').writeFileSync(pngBuildLua, 'local player_score=1\nlocal enemy_score=2\nprint(player_score,enemy_score)\n');
+  require('fs').writeFileSync(pngBuildNames, 'player_score\n');
+  return mainAsync(['build', '--lua', pngBuildLua, '--lua-minify', '--keep-names-from-file', pngBuildNames, pngBuildKeepOutput], {
+    write: () => {}, error: (text) => { throw new Error(text); },
+  });
+}).then((status) => {
+  assert.strictEqual(status, 0);
+  let listing = '';
+  return mainAsync(['listlua', pngBuildKeepOutput], {
+    write: (text) => { listing += text; }, error: (text) => { throw new Error(text); },
+  }).then((listStatus) => {
+    assert.strictEqual(listStatus, 0);
+    assert.match(listing, /player_score/);
+    assert.doesNotMatch(listing, /enemy_score/);
+  });
+}).then(() => {
   rmSync(pngBuildDirectory, { recursive: true, force: true });
 }).catch((error) => { throw error; });
 let pngAst = '', textAst = '';

@@ -34,6 +34,8 @@ export function buildP8(options?: {
   empty?: BuildDomainName[];
   luaMinify?: boolean;
   luaFormat?: boolean;
+  keepAllNames?: boolean;
+  keepNames?: string[];
   optimizeTokens?: boolean;
   indentwidth?: number;
 }): Uint8Array;

@@ -23,7 +23,7 @@ function emptySections() {
 
 /** Match picotool's section-source and empty-override build behavior for text carts. */
 function buildP8({ existing, sources = {}, empty = [], luaMinify = false, luaFormat = false,
-  indentwidth = 2, optimizeTokens = false } = {}) {
+  keepAllNames = false, keepNames = [], indentwidth = 2, optimizeTokens = false } = {}) {
   const previous = existing ? base.parseP8(existing) : null;
   const version = previous?.version ?? DEFAULT_VERSION;
   const sections = previous ? { ...previous.sections } : emptySections();
@@ -51,7 +51,7 @@ function buildP8({ existing, sources = {}, empty = [], luaMinify = false, luaFor
     }
   }
   const writer = luaFormat ? { luaWriter: 'ast-format', formatOptions: { indentwidth } }
-    : luaMinify ? { luaWriter: 'minify' } : undefined;
+    : luaMinify ? { luaWriter: 'minify', minifyOptions: { keepAllNames, keepNames } } : undefined;
   return writeP8({ format: 'p8', version, sections }, writer);
 }
 
