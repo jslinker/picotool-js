@@ -29,7 +29,13 @@ class BaseASTWalker {
   }
 
   *_walk_node(node) {
-    for (const field of node._fields) yield* this._walk(node[field]);
+    for (const field of node._fields) {
+      // Python's goto/label fields are bytes values. Its generic walker
+      // iterates each byte as an integer rather than yielding the whole name.
+      if (field === 'label' && (node.type === 'StatGoto' || node.type === 'StatLabel') && typeof node[field] === 'string') {
+        for (let index = 0; index < node[field].length; index += 1) yield* this._walk(node[field].charCodeAt(index) & 0xff);
+      } else yield* this._walk(node[field]);
+    }
   }
 
   *walk() { yield* this._walk(this._root); }
