@@ -20,9 +20,17 @@ function parseArgs(argv = []) {
   const result = { quiet: false, debug: false, command: null, csv: false, filename: [] };
   let optionsEnded = false;
   while (args.length) {
-    const arg = args.shift();
+    let arg = args.shift();
+    if (!optionsEnded && /^--(?:indentwidth|keep-names-from-file|lua-path|lua|gfx|gff|map|sfx|music)=/.test(arg)) {
+      const separator = arg.indexOf('=');
+      args.unshift(arg.slice(separator + 1));
+      arg = arg.slice(0, separator);
+    }
     if (arg === '--' && !optionsEnded) {
       optionsEnded = true;
+    } else if (!optionsEnded && (arg === '-h' || arg === '--help')) {
+      result.help = true;
+      args.length = 0;
     } else if (!optionsEnded && result.command === null && (arg === '-q' || arg === '--quiet')) {
       result.quiet = true;
     } else if (!optionsEnded && result.command === null && arg === '--debug') {
@@ -77,10 +85,29 @@ function parseArgs(argv = []) {
       result.filename.push(arg);
     }
   }
-  if (result.command && result.filename.length === 0) {
+  if (result.command && result.filename.length === 0 && !result.help) {
     throw new Error(`${result.command}: the following arguments are required: filename`);
   }
+  if (result.command === 'build' && result.filename.length > 1) throw new Error(`build: unrecognized arguments: ${result.filename.slice(1).join(' ')}`);
   return result;
+}
+
+const COMMAND_HELP = {
+  stats: '[--csv] filename [filename ...]',
+  listlua: '[--show-line-numbers] [--pure-lua] filename [filename ...]',
+  listrawlua: '[--show-line-numbers] filename [filename ...]',
+  writep8: 'filename [filename ...]',
+  luamin: '[--keep-all-names] [--keep-names-from-file FILE] filename [filename ...]',
+  luafmt: '[--indentwidth N] [--overwrite] filename [filename ...]',
+  luafind: '[--listfiles] filename [filename ...]',
+  listtokens: 'filename [filename ...]', printast: 'filename [filename ...]',
+  build: '[--lua FILE] [--empty-lua] [--lua-path PATH] [--lua-format | --lua-minify] [section options] filename',
+};
+
+function formatHelp(command = null) {
+  if (command) return `usage: p8tool ${command} [-h] ${COMMAND_HELP[command]}\n\noptions:\n  -h, --help  show this help message and exit\n`;
+  return 'usage: p8tool [-h] [-q] [--debug] {stats,listlua,listrawlua,writep8,luamin,luafmt,luafind,listtokens,printast,build} ...\n\n' +
+    'PICO-8 cartridge processing and build tools\n\noptions:\n  -h, --help   show this help message and exit\n  -q, --quiet  suppress normal output\n  --debug      write extra debugging messages\n';
 }
 
 function friendly(value) {
@@ -555,6 +582,8 @@ async function asyncLuaFind(args, io = {}) {
 async function mainAsync(argv = process.argv.slice(2), io = {}) {
   try {
     const args = parseArgs(argv);
+    if (args.help) { (io.write || ((text) => process.stdout.write(text)))(formatHelp(args.command)); return 0; }
+    if (!args.command) { (io.write || ((text) => process.stdout.write(text)))(formatHelp()); return 1; }
     if (['listlua', 'listtokens'].includes(args.command) && args.filename.some((filename) => filename.endsWith('.p8.png'))) return asyncListing(args, io);
     if (['writep8', 'luamin', 'luafmt'].includes(args.command) && args.filename.some((filename) => filename.endsWith('.p8.png'))) return asyncWrite(args, io);
     if (args.command === 'luafind' && args.filename.slice(1).some((filename) => filename.endsWith('.p8.png'))) return asyncLuaFind(args, io);
@@ -583,7 +612,8 @@ async function mainAsync(argv = process.argv.slice(2), io = {}) {
 function main(argv = process.argv.slice(2), io = {}) {
   try {
     const args = parseArgs(argv);
-    if (!args.command) return 1;
+    if (args.help) { (io.write || ((text) => process.stdout.write(text)))(formatHelp(args.command)); return 0; }
+    if (!args.command) { (io.write || ((text) => process.stdout.write(text)))(formatHelp()); return 1; }
     if (args.command === 'stats') return runStats(args, io);
     if (['listlua', 'listtokens', 'listrawlua'].includes(args.command)) return runListing(args, io);
     if (args.command === 'luafind') return runLuaFind(args, io);
@@ -597,4 +627,4 @@ function main(argv = process.argv.slice(2), io = {}) {
   }
 }
 
-module.exports = Object.freeze({ asyncBuild, asyncPrintAst, asyncStatsRows, buildOptions, friendly, formatStats, main, mainAsync, parseArgs, runBuild, runListing, runPrintAst, runStats, statsRows });
+module.exports = Object.freeze({ asyncBuild, asyncPrintAst, asyncStatsRows, buildOptions, formatHelp, friendly, formatStats, main, mainAsync, parseArgs, runBuild, runListing, runPrintAst, runStats, statsRows });

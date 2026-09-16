@@ -46,6 +46,7 @@ for (const argv of [
   [], ['bogus'], ['stats'], ['stats', '--bogus', 'cart.p8'],
   ['luafmt', '--indentwidth', 'nope', 'cart.p8'], ['build', '--lua'],
   ['build', '--lua-path'], ['luamin', '--keep-names-from-file'],
+  ['build', 'one.p8', 'two.p8'],
 ]) {
   const pythonResult = spawnSync('python3', ['-c', pythonCliMain, ...argv], {
     env: { ...process.env, PYTHONPATH: resolve(__dirname, '../../../vendor/picotool') },
@@ -53,6 +54,20 @@ for (const argv of [
   const javascriptStatus = main(argv, { write: () => {}, error: () => {} });
   assert.strictEqual(javascriptStatus, pythonResult.status, `argument-parser status: ${argv.join(' ')}`);
 }
+for (const argv of [['-h'], ['--help'], ['stats', '-h'], ['build', '--help']]) {
+  const pythonResult = spawnSync('python3', ['-c', pythonCliMain, ...argv], {
+    env: { ...process.env, PYTHONPATH: resolve(__dirname, '../../../vendor/picotool') },
+  });
+  let help = '', errors = '';
+  const javascriptStatus = main(argv, { write: (value) => { help += value; }, error: (value) => { errors += value; } });
+  assert.strictEqual(javascriptStatus, pythonResult.status, `help status: ${argv.join(' ')}`);
+  assert.strictEqual(errors, '');
+  assert.match(help, new RegExp(`^usage: p8tool${argv[0] === 'stats' || argv[0] === 'build' ? ` ${argv[0]}` : ''}`));
+  assert.match(help, /-h, --help/);
+}
+let noCommandHelp = '';
+assert.strictEqual(main([], { write: (value) => { noCommandHelp += value; }, error: () => {} }), 1);
+assert.match(noCommandHelp, /^usage: p8tool/);
 const fileSystem = require('node:fs');
 const writerOracleOutputs = new Map();
 for (const sourceCart of [upstreamCart, resolve(__dirname, '../../../vendor/picotool/tests/testdata/test_gol.p8')]) {
@@ -138,6 +153,9 @@ assert.deepStrictEqual(parseArgs(['luamin', '--keep-names-from-file', 'names.txt
 assert.throws(() => parseArgs(['luamin', '--keep-names-from-file']), /requires a filename/);
 assert.deepStrictEqual(parseArgs(['stats', '--', '-cart.p8']).filename, ['-cart.p8']);
 assert.deepStrictEqual(parseArgs(['listlua', '--', '--pure-lua']).filename, ['--pure-lua']);
+assert.strictEqual(parseArgs(['luafmt', '--indentwidth=4', 'one.p8']).indentwidth, 4);
+assert.strictEqual(parseArgs(['luamin', '--keep-names-from-file=names.txt', 'one.p8']).keepNamesFromFile, 'names.txt');
+assert.strictEqual(parseArgs(['build', '--lua=main.lua', '--lua-path=?.lua', 'one.p8']).lua, 'main.lua');
 
 const files = new Map([['one.p8', Buffer.from(cart)], ['two.p8', Buffer.from(cart)]]);
 const read = (filename) => files.get(filename) || (() => { throw new Error('missing'); })();
