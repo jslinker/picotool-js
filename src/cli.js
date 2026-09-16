@@ -44,6 +44,9 @@ function parseArgs(argv = []) {
       if (!Number.isInteger(result.indentwidth)) throw new Error('--indentwidth must be an integer');
     } else if (arg === '--keep-all-names' && result.command === 'luamin') {
       result.keepAllNames = true;
+    } else if (arg === '--keep-names-from-file' && result.command === 'luamin') {
+      result.keepNamesFromFile = args.shift();
+      if (result.keepNamesFromFile === undefined) throw new Error('--keep-names-from-file requires a filename');
     } else if (arg === '--listfiles' && result.command === 'luafind') {
       result.listFiles = true;
     } else if (result.command === 'build' && /^--(?:empty-)?(?:lua|gfx|gff|map|sfx|music)$/.test(arg)) {
@@ -225,6 +228,16 @@ function outputName(filename, command, overwrite) {
   throw new Error('filename must end in .p8 or .p8.png');
 }
 
+function namesFromFileContents(contents) {
+  return Buffer.from(contents).toString('latin1').split(/\n/)
+    .map((line) => line.replace(/^[\t\n\v\f\r ]+|[\t\n\v\f\r ]+$/g, ''))
+    .filter((line) => line && !line.startsWith('#'));
+}
+
+function keepNamesFor(args, read) {
+  return args.keepNamesFromFile ? namesFromFileContents(read(args.keepNamesFromFile)) : [];
+}
+
 function runWrite(args, io = {}) {
   const write = io.write || ((text) => process.stdout.write(text));
   const error = io.error || ((text) => process.stderr.write(text));
@@ -237,7 +250,7 @@ function runWrite(args, io = {}) {
       const source = require('./picotool').parseP8((io.readFile || fs.readFileSync)(filename));
       write(`${filename} -> ${output}\n`);
       const luaWriter = args.command === 'luamin' ? 'minify' : args.command === 'luafmt' ? 'ast-format' : undefined;
-      const bytes = writeP8(source, { luaWriter, minifyOptions: { keepAllNames: args.keepAllNames }, formatOptions: { indentwidth: args.indentwidth ?? 2 } });
+      const bytes = writeP8(source, { luaWriter, minifyOptions: { keepAllNames: args.keepAllNames, keepNames: keepNamesFor(args, io.readFile || fs.readFileSync) }, formatOptions: { indentwidth: args.indentwidth ?? 2 } });
       (io.writeFile || fs.writeFileSync)(output, bytes);
     } catch (exception) {
       failed = true;
@@ -474,7 +487,8 @@ async function asyncWrite(args, io = {}) {
         const parsed = require('./picotool').parseP8(input);
         write(`${filename} -> ${output}\n`);
         const luaWriter = args.command === 'luamin' ? 'minify' : args.command === 'luafmt' ? 'ast-format' : undefined;
-        await writeFile(output, writeP8(parsed, { luaWriter, minifyOptions: { keepAllNames: args.keepAllNames }, formatOptions: { indentwidth: args.indentwidth ?? 2 } }));
+        const keepNames = args.keepNamesFromFile ? namesFromFileContents(await read(args.keepNamesFromFile)) : [];
+        await writeFile(output, writeP8(parsed, { luaWriter, minifyOptions: { keepAllNames: args.keepAllNames, keepNames }, formatOptions: { indentwidth: args.indentwidth ?? 2 } }));
       } else if (filename.endsWith('.p8.png')) {
         const { cartridge } = await readP8Png(input);
         write(`${filename} -> ${output}\n`);
@@ -482,7 +496,8 @@ async function asyncWrite(args, io = {}) {
         if (args.command !== 'writep8') {
           const parsed = p8FromPngCartridge(cartridge);
           const luaWriter = args.command === 'luamin' ? 'minify' : 'ast-format';
-          const rewritten = require('./picotool').parseP8(writeP8(parsed, { luaWriter, minifyOptions: { keepAllNames: args.keepAllNames }, formatOptions: { indentwidth: args.indentwidth ?? 2 } }));
+          const keepNames = args.keepNamesFromFile ? namesFromFileContents(await read(args.keepNamesFromFile)) : [];
+          const rewritten = require('./picotool').parseP8(writeP8(parsed, { luaWriter, minifyOptions: { keepAllNames: args.keepAllNames, keepNames }, formatOptions: { indentwidth: args.indentwidth ?? 2 } }));
           luaBytes = require('./picotool').encodeP8scii((rewritten.sections.lua || []).join(''));
         }
         await writeFile(output, await writeP8Png(cartridge, input, luaBytes));

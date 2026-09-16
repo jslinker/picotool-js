@@ -43,15 +43,19 @@ const pythonCliMain = String.raw`import sys
 from pico8 import tool
 sys.exit(tool.main(sys.argv[1:]))`;
 const fileSystem = require('node:fs');
+const writerOracleOutputs = new Map();
 for (const sourceCart of [upstreamCart, resolve(__dirname, '../../../vendor/picotool/tests/testdata/test_gol.p8')]) {
-for (const [command, options] of [['writep8', []], ['luamin', []], ['luamin', ['--keep-all-names']], ['luafmt', []], ['luafmt', ['--indentwidth', '4']], ['luafmt', ['--overwrite']]]) {
+for (const [command, options] of [['writep8', []], ['luamin', []], ['luamin', ['--keep-all-names']], ['luamin', ['--keep-names-from-file', '<names>']], ['luafmt', []], ['luafmt', ['--indentwidth', '4']], ['luafmt', ['--overwrite']]]) {
   const directory = mkdtempSync(join(tmpdir(), `picotool-writer-oracle-${command}-`));
   const input = join(directory, 'game.p8');
+  const namesFile = join(directory, 'names.txt');
+  const cliOptions = options.map((option) => option === '<names>' ? namesFile : option);
   const output = options.includes('--overwrite') ? input : join(directory, 'game_fmt.p8');
   const original = fileSystem.readFileSync(sourceCart);
   try {
     fileSystem.writeFileSync(input, original);
-    const pythonResult = spawnSync('python3', ['-c', pythonCliMain, command, ...options, input], {
+    fileSystem.writeFileSync(namesFile, 'player\n # comment\n\n  x  \n');
+    const pythonResult = spawnSync('python3', ['-c', pythonCliMain, command, ...cliOptions, input], {
       env: { ...process.env, PYTHONPATH: resolve(__dirname, '../../../vendor/picotool') },
     });
     assert.strictEqual(pythonResult.status, 0, pythonResult.stderr.toString());
@@ -59,16 +63,19 @@ for (const [command, options] of [['writep8', []], ['luamin', []], ['luamin', ['
     fileSystem.writeFileSync(input, original);
     if (output !== input) fileSystem.unlinkSync(output);
     let javascriptOutput = '', javascriptErrors = '';
-    const javascriptStatus = main([command, ...options, input], {
+    const javascriptStatus = main([command, ...cliOptions, input], {
       write: (value) => { javascriptOutput += value; }, error: (value) => { javascriptErrors += value; },
     });
     assert.strictEqual(javascriptStatus, pythonResult.status, `${command} ${options.join(' ')}: status`);
     assert.strictEqual(javascriptOutput, pythonResult.stdout.toString(), `${command} ${options.join(' ')}: notice`);
     assert.strictEqual(javascriptErrors, pythonResult.stderr.toString(), `${command} ${options.join(' ')}: errors`);
     assert.deepStrictEqual(fileSystem.readFileSync(output), pythonOutput, `${command} ${options.join(' ')}: written cart bytes`);
+    writerOracleOutputs.set(`${sourceCart}:${command}:${options[0] || ''}`, pythonOutput);
   } finally { rmSync(directory, { recursive: true, force: true }); }
 }
 }
+const golSourceCart = resolve(__dirname, '../../../vendor/picotool/tests/testdata/test_gol.p8');
+assert.notDeepStrictEqual(writerOracleOutputs.get(`${golSourceCart}:luamin:--keep-names-from-file`), writerOracleOutputs.get(`${golSourceCart}:luamin:`), 'keep-names file must materially change complex-cart minification');
 for (const command of ['stats', 'listlua', 'listtokens', 'printast']) {
   comparePythonEvents(command, [upstreamCart, 'missing-extension.txt', upstreamCart]);
   comparePythonEvents(command, ['missing-extension.txt']);
@@ -89,6 +96,10 @@ assert.deepStrictEqual(parseArgs(['listlua', '--show-line-numbers', '--pure-lua'
   quiet: false, debug: false, command: 'listlua', csv: false, showLineNumbers: true,
   pureLua: true, filename: ['one.p8'],
 });
+assert.deepStrictEqual(parseArgs(['luamin', '--keep-names-from-file', 'names.txt', 'one.p8']), {
+  quiet: false, debug: false, command: 'luamin', csv: false, keepNamesFromFile: 'names.txt', filename: ['one.p8'],
+});
+assert.throws(() => parseArgs(['luamin', '--keep-names-from-file']), /requires a filename/);
 
 const files = new Map([['one.p8', Buffer.from(cart)], ['two.p8', Buffer.from(cart)]]);
 const read = (filename) => files.get(filename) || (() => { throw new Error('missing'); })();
@@ -331,6 +342,19 @@ mainAsync(['stats', png], {
       assert.deepStrictEqual(collapseEvents(events).map(([channel]) => channel), ['out', 'err', 'out'], `${command}: mixed text/PNG ordering`);
       assert.match(events.find(([channel]) => channel === 'err')[1], /filename must end in \.p8 or \.p8\.png/);
     }));
+  }).then(() => {
+    const directory = mkdtempSync(join(tmpdir(), 'picotool-png-keep-names-'));
+    const namesFile = join(directory, 'names.txt');
+    const golPng = resolve(__dirname, '../../../vendor/picotool/tests/testdata/test_gol.p8.png');
+    fileSystem.writeFileSync(namesFile, 'x\n');
+    let plain, kept;
+    return Promise.all([
+      mainAsync(['luamin', golPng], { writeFile: (_filename, bytes) => { plain = Buffer.from(bytes); }, write: () => {}, error: (value) => { throw new Error(value); } }),
+      mainAsync(['luamin', '--keep-names-from-file', namesFile, golPng], { writeFile: (_filename, bytes) => { kept = Buffer.from(bytes); }, write: () => {}, error: (value) => { throw new Error(value); } }),
+    ]).then((statuses) => {
+      assert.deepStrictEqual(statuses, [0, 0]);
+      assert.notDeepStrictEqual(kept, plain, 'PNG keep-names file must affect written cart bytes');
+    }).finally(() => { rmSync(directory, { recursive: true, force: true }); });
   }).then(() => {
     console.log('cli tests passed');
   });
