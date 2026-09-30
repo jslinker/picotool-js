@@ -1,0 +1,2045 @@
+{
+  "schema": "picotool-js/upstream-api-manifest/1",
+  "items": [
+    {
+      "kind": "class",
+      "name": "pico8.build.build.LuaBuildError",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/build.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.build.build.RequireWalker",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/build.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.build.build.do_build",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/build.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.game.compress.compress_code",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/sections.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.game.compress.decompress_code",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/sections.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.game.file.UnrecognizedFileType",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/sections.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.game.file.formatter_for_filename",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.game.file.from_file",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/sections.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.game.file.to_file",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/sections.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.game.formatter.base.BaseFormatter",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.game.formatter.base.BaseFormatter.from_file",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.game.formatter.base.BaseFormatter.to_file",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.game.formatter.p8.InvalidP8HeaderError",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.game.formatter.p8.InvalidP8SectionError",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.game.formatter.p8.P8IncludeNotFound",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.game.formatter.p8.P8IncludeOutsideOfAllowedDirectory",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.game.formatter.p8.InvalidP8Include",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.game.formatter.p8.get_root_include_path",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.game.formatter.p8.lines_for_tab",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.game.formatter.p8.process_includes",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.game.formatter.p8.P8Formatter",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.game.formatter.p8.P8Formatter.from_file",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.game.formatter.p8.P8Formatter.to_file",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.game.formatter.p8png.InvalidP8PNGError",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.game.formatter.p8png.get_picodata_from_pngdata",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.game.formatter.p8png.get_pngdata_from_picodata",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.game.formatter.p8png.get_code_from_bytes",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.game.formatter.p8png.get_bytes_from_code",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.game.formatter.p8png.get_raw_data_from_p8png_file",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.game.formatter.p8png.P8PNGFormatter",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.game.formatter.p8png.P8PNGFormatter.from_file",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.game.formatter.p8png.P8PNGFormatter.to_file",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.game.formatter.rom.ROMFormatter",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.game.formatter.rom.ROMFormatter.from_file",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.game.formatter.rom.ROMFormatter.to_file",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.game.game.Game",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/sections.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.game.game.Game.make_empty_game",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/sections.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.game.game.Game.get_compressed_size",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/sections.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.game.game.Game.write_cart_data",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/sections.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.gff.gff.Gff",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.gff.gff.Gff.empty",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.gff.gff.Gff.get_flags",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.gff.gff.Gff.set_flags",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.gff.gff.Gff.clear_flags",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.gff.gff.Gff.reset_flags",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.gfx.gfx.Gfx",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.gfx.gfx.Gfx.empty",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.gfx.gfx.Gfx.from_lines",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.gfx.gfx.Gfx.to_lines",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.gfx.gfx.Gfx.get_sprite",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.gfx.gfx.Gfx.set_sprite",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.lua.lexer.LexerError",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.lua.lexer.Token",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lexer.Token.matches",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lexer.Token.value",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lexer.Token.code",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lexer.Token.code",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.lua.lexer.TokSpace",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.lua.lexer.TokNewline",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.lua.lexer.TokComment",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.lua.lexer.TokString",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lexer.TokString.code",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lexer.TokString.code",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.lua.lexer.TokNumber",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lexer.TokNumber.value",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.lua.lexer.TokName",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.lua.lexer.TokLabel",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.lua.lexer.TokKeyword",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.lua.lexer.TokSymbol",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.lua.lexer.Lexer",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lexer.Lexer.process_lines",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/lua-lexer.js:tokenizeLua",
+      "reason": "stateful lexer behavior covered through functional wrapper",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lexer.Lexer.tokens",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/lua-lexer.js:tokenizeLua",
+      "reason": "stateful lexer behavior covered through functional wrapper",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.lua.lua.unicode_to_p8scii",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.lua.lua.p8scii_to_unicode",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.lua.lua.Lua",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lua.Lua.get_char_count",
+      "disposition": "partial",
+      "jsEquivalent": "src/game.js:LuaSource",
+      "reason": "LuaSource lacks retained Python lifecycle operation",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lua.Lua.get_token_count",
+      "disposition": "partial",
+      "jsEquivalent": "src/game.js:LuaSource",
+      "reason": "LuaSource lacks retained Python lifecycle operation",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lua.Lua.get_line_count",
+      "disposition": "partial",
+      "jsEquivalent": "src/game.js:LuaSource",
+      "reason": "LuaSource lacks retained Python lifecycle operation",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lua.Lua.get_title",
+      "disposition": "partial",
+      "jsEquivalent": "src/game.js:LuaSource",
+      "reason": "LuaSource lacks retained Python lifecycle operation",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lua.Lua.get_byline",
+      "disposition": "partial",
+      "jsEquivalent": "src/game.js:LuaSource",
+      "reason": "LuaSource lacks retained Python lifecycle operation",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lua.Lua.tokens",
+      "disposition": "partial",
+      "jsEquivalent": "src/game.js:LuaSource",
+      "reason": "LuaSource lacks retained Python lifecycle operation",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lua.Lua.root",
+      "disposition": "partial",
+      "jsEquivalent": "src/game.js:LuaSource",
+      "reason": "LuaSource lacks retained Python lifecycle operation",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lua.Lua.version",
+      "disposition": "partial",
+      "jsEquivalent": "src/game.js:LuaSource",
+      "reason": "LuaSource lacks retained Python lifecycle operation",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lua.Lua.from_lines",
+      "disposition": "partial",
+      "jsEquivalent": "src/game.js:LuaSource",
+      "reason": "LuaSource lacks retained Python lifecycle operation",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lua.Lua.update_from_lines",
+      "disposition": "partial",
+      "jsEquivalent": "src/game.js:LuaSource",
+      "reason": "LuaSource lacks retained Python lifecycle operation",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lua.Lua.to_lines",
+      "disposition": "partial",
+      "jsEquivalent": "src/game.js:LuaSource",
+      "reason": "LuaSource lacks retained Python lifecycle operation",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lua.Lua.reparse",
+      "disposition": "partial",
+      "jsEquivalent": "src/game.js:LuaSource",
+      "reason": "LuaSource lacks retained Python lifecycle operation",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.lua.lua.BaseASTWalker",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lua.BaseASTWalker.walk",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.lua.lua.BaseLuaWriter",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lua.BaseLuaWriter.to_lines",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.lua.lua.LuaEchoWriter",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lua.LuaEchoWriter.to_lines",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.lua.lua.PureLuaWriter",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lua.PureLuaWriter.to_lines",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lua.PureLuaWriter.line_to_pure_lua",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.lua.lua.LuaASTEchoWriter",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lua.LuaASTEchoWriter.to_lines",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.lua.lua.MinifyNameFactory",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lua.MinifyNameFactory.read_names_file",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lua.MinifyNameFactory.get_short_name",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.lua.lua.LuaMinifyWriter",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.lua.lua.LuaFormatterWriter",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.lua.lua.LuaMinifyTokenWriter",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lua.LuaMinifyTokenWriter.to_lines",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.lua.lua.LuaFormatterTokenWriter",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.lua.LuaFormatterTokenWriter.to_lines",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.lua.parser.ParserError",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.lua.parser.Node",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.parser.Node.start_pos",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.parser.Node.end_pos",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.parser.Node.store_token_groups",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.parser.Node.tokens",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.Chunk",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.StatAssignment",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.StatFunctionCall",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.StatDo",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.StatWhile",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.StatRepeat",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.StatIf",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.StatForStep",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.StatForIn",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.StatFunction",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.StatLocalFunction",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.StatLocalAssignment",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.StatGoto",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.StatLabel",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.StatBreak",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.StatReturn",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.FunctionName",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.FunctionArgs",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.VarList",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.VarName",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.VarIndex",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.VarAttribute",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.NameList",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.ExpList",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.ExpValue",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.VarargDots",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.ExpBinOp",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.ExpUnOp",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.FunctionCall",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.FunctionCallMethod",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.Function",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.FunctionBody",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.TableConstructor",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.FieldExpKey",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.FieldNamedKey",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "dynamic-class",
+      "name": "pico8.lua.parser.FieldExp",
+      "disposition": "implemented",
+      "jsEquivalent": "src/lua-ast-model.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.lua.parser.Parser",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.parser.Parser.process_tokens",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/lua-ast-model.js:parseLua",
+      "reason": "stateful parser behavior covered through functional wrapper",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.parser.Parser.root",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/lua-ast-model.js:parseLua",
+      "reason": "stateful parser behavior covered through functional wrapper",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.lua.parser.Parser.tokens",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/lua-ast-model.js:parseLua",
+      "reason": "stateful parser behavior covered through functional wrapper",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.map.map.Map",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.map.map.Map.empty",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.map.map.Map.from_lines",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.map.map.Map.from_bytes",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.map.map.Map.get_cell",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.map.map.Map.set_cell",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.map.map.Map.get_rect_tiles",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.map.map.Map.set_rect_tiles",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.map.map.Map.get_rect_pixels",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.music.music.Music",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.music.music.Music.empty",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.music.music.Music.from_lines",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.music.music.Music.to_lines",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.music.music.Music.get_channel",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.music.music.Music.set_channel",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.music.music.Music.get_properties",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.music.music.Music.set_properties",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.sfx.sfx.Sfx",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.sfx.sfx.Sfx.empty",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.sfx.sfx.Sfx.from_lines",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.sfx.sfx.Sfx.to_lines",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.sfx.sfx.Sfx.get_note",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.sfx.sfx.Sfx.set_note",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.sfx.sfx.Sfx.get_properties",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.sfx.sfx.Sfx.set_properties",
+      "disposition": "implemented",
+      "jsEquivalent": "src/index.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.tool.stats",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/cli.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.tool.listlua",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/cli.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.tool.listrawlua",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/cli.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.tool.listtokens",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/cli.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.tool.process_game_files",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/cli.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.tool.writep8",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/cli.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.tool.luamin",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/cli.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.tool.luafmt",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/cli.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.tool.printast",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/cli.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.tool.luafind",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/cli.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.tool.do_writep8",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/cli.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.tool.do_luamin",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/cli.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.tool.do_luafmt",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/cli.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.tool.main",
+      "disposition": "functional-equivalent",
+      "jsEquivalent": "src/cli.js",
+      "reason": "",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.util.Error",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.util.InvalidP8DataError",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.util.set_verbosity",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.util.debug",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.util.write",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.util.error",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "pico8.util.BaseSection",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.util.BaseSection.from_lines",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.util.BaseSection.to_lines",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.util.BaseSection.from_bytes",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "method",
+      "name": "pico8.util.BaseSection.to_bytes",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "pico8.util.bytes_to_hex",
+      "disposition": "excluded",
+      "jsEquivalent": null,
+      "reason": "Python formatter/infrastructure helper has no public JS contract",
+      "tests": [
+        "tools/check-parity.cjs"
+      ]
+    }
+  ]
+}

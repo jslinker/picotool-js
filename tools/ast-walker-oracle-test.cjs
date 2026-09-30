@@ -6,6 +6,7 @@ const path = require('node:path');
 const { parseLua, VarName } = require('../src/lua-ast-model');
 const { BaseASTWalker } = require('../src/lua-ast-walker');
 const { TokName, TokNumber } = require('../src/lua-token');
+const { python: pythonExecutable, pythonEnv, picotoolRoot, fixturesRoot } = require('./test-env.cjs');
 
 const python = String.raw`import json,sys
 from pico8.lua import lexer,parser,lua
@@ -23,7 +24,7 @@ class Trace(lua.BaseASTWalker):
     else: yield ['value',type(value).__name__,str(value)]
 print(json.dumps(list(Trace(lex.tokens,p.root).walk())))`;
 function pythonTrace(source) {
-  const result = cp.spawnSync('python3', ['-c', python], { input: Buffer.from(source, 'latin1'), env: { ...process.env, PYTHONPATH: '../../vendor/picotool' } });
+  const result = cp.spawnSync(pythonExecutable, ['-c', python], { input: Buffer.from(source, 'latin1'), env: pythonEnv });
   assert.equal(result.status, 0, result.stderr.toString());
   return JSON.parse(result.stdout.toString());
 }
@@ -53,7 +54,7 @@ class Mutate(lua.BaseASTWalker):
 list(Mutate(lex.tokens,p.root).walk())
 print(json.dumps([t.code.decode('latin1') for t in p.root.tokens]))`;
 function pythonMutation(source) {
-  const result = cp.spawnSync('python3', ['-c', mutationPython], { input: Buffer.from(source, 'latin1'), env: { ...process.env, PYTHONPATH: '../../vendor/picotool' } });
+  const result = cp.spawnSync(pythonExecutable, ['-c', mutationPython], { input: Buffer.from(source, 'latin1'), env: pythonEnv });
   assert.equal(result.status, 0, result.stderr.toString()); return JSON.parse(result.stdout.toString());
 }
 class MutatingWalker extends BaseASTWalker {
@@ -79,7 +80,7 @@ class Replace(lua.BaseASTWalker):
 list(Replace(lex.tokens,p.root).walk())
 print(json.dumps([t.code.decode('latin1') for t in p.root.tokens]))`;
 function pythonReplacement(source) {
-  const result = cp.spawnSync('python3', ['-c', replacementPython], { input: Buffer.from(source, 'latin1'), env: { ...process.env, PYTHONPATH: '../../vendor/picotool' } });
+  const result = cp.spawnSync(pythonExecutable, ['-c', replacementPython], { input: Buffer.from(source, 'latin1'), env: pythonEnv });
   assert.equal(result.status, 0, result.stderr.toString()); return JSON.parse(result.stdout.toString());
 }
 class ReplacingWalker extends BaseASTWalker {
@@ -113,7 +114,7 @@ class Replace(lua.BaseASTWalker):
 list(Replace(lex.tokens,p.root).walk())
 print(json.dumps([t.code.decode('latin1') for t in p.root.tokens]))`;
 function pythonVariedReplacement(source) {
-  const result = cp.spawnSync('python3', ['-c', variedReplacementPython], { input: Buffer.from(source, 'latin1'), env: { ...process.env, PYTHONPATH: '../../vendor/picotool' } });
+  const result = cp.spawnSync(pythonExecutable, ['-c', variedReplacementPython], { input: Buffer.from(source, 'latin1'), env: pythonEnv });
   assert.equal(result.status, 0, result.stderr.toString()); return JSON.parse(result.stdout.toString());
 }
 class VariedReplacingWalker extends BaseASTWalker {
@@ -145,9 +146,9 @@ for (const source of focused) {
   assert.deepEqual(javascriptVariedReplacement(source), pythonVariedReplacement(source), `AST walker varied replacement mismatch: ${source}`);
 }
 
-const corpusPython = String.raw`import ast,base64,json,pathlib
+const corpusPython = String.raw`import ast,base64,json,pathlib,sys
 from pico8.lua import lexer,parser
-tree=ast.parse(pathlib.Path('../../vendor/picotool/tests/pico8/lua/parser_test.py').read_text()); seen=set(); sources=[]
+tree=ast.parse(pathlib.Path(sys.argv[1]).read_text()); seen=set(); sources=[]
 for node in ast.walk(tree):
   if not isinstance(node,ast.Call) or not isinstance(node.func,ast.Name) or node.func.id!='get_parser' or not node.args: continue
   try: source=ast.literal_eval(node.args[0])
@@ -157,7 +158,7 @@ for node in ast.walk(tree):
   try: p.process_tokens(lex.tokens); sources.append(base64.b64encode(source).decode())
   except Exception: pass
 print(json.dumps(sources))`;
-const corpusResult = cp.spawnSync('python3', ['-c', corpusPython], { cwd: process.cwd(), env: { ...process.env, PYTHONPATH: '../../vendor/picotool' } });
+const corpusResult = cp.spawnSync(pythonExecutable, ['-c', corpusPython, path.join(picotoolRoot, 'tests', 'pico8', 'lua', 'parser_test.py')], { cwd: process.cwd(), env: pythonEnv });
 assert.equal(corpusResult.status, 0, corpusResult.stderr.toString());
 const acceptedSources = JSON.parse(corpusResult.stdout.toString());
 assert.equal(acceptedSources.length, 72);
@@ -169,7 +170,7 @@ for (const encoded of acceptedSources) {
   assert.deepEqual(javascriptVariedReplacement(source), pythonVariedReplacement(source), `AST walker corpus varied replacement mismatch: ${source.slice(0, 100)}`);
 }
 
-const fixtureDirectory = path.join(__dirname, '../../../vendor/picotool/tests/testdata');
+const fixtureDirectory = fixturesRoot;
 for (const file of fs.readdirSync(fixtureDirectory).filter(name => name.endsWith('.p8') && name !== 'test_cart_memdump.p8')) {
   const text = fs.readFileSync(path.join(fixtureDirectory, file), 'latin1');
   const match = /__lua__\n([\s\S]*?)(?=\n__\w+__|$)/.exec(text);

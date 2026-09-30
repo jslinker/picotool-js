@@ -1,0 +1,12 @@
+{
+  "schema": "picotool-python-suite-baseline/1",
+  "revision": "49808e5ddb21e886a5608a19c95ec3ca6f1ee541",
+  "total": 308,
+  "expectedFailures": [],
+  "expectedErrors": [
+    "tests.pico8.build.build_test.TestDoBuild.testBuildEmptiesSection",
+    "tests.pico8.build.build_test.TestDoBuild.testBuildLuaFromLuaFile",
+    "tests.pico8.build.build_test.TestDoBuild.testBuildLuaFromP8",
+    "tests.pico8.build.build_test.TestDoBuild.testBuildOverwritesExisting"
+  ]
+}

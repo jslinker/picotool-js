@@ -1,6 +1,7 @@
 'use strict';
 
 const base = require('./picotool');
+const { fromLatin1 } = require('./byte-utils');
 const { tokenizeLua } = require('./lua-lexer');
 const { validateLua } = require('./lua-parser');
 const BUILTINS = require('./lua-builtins');
@@ -50,7 +51,7 @@ function minifyLua(source, options = {}) {
       lastWasNewline = false; output += token.code;
     }
   }
-  return Buffer.from(output, 'latin1');
+  return fromLatin1(output);
 }
 
 module.exports = Object.freeze({ minifyLua });

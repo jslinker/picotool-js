@@ -1,4 +1,5 @@
 node_modules/
+.oracle-venv/
 coverage/
 .DS_Store
 vendor/picotool/

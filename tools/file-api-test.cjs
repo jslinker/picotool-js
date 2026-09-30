@@ -31,7 +31,8 @@ async function main() {
     assert.equal((await picotool.fromFile(pngPath)).gff._data[0], 123);
 
     await picotool.toFile(await picotool.fromFile(pngPath), textPath);
-    assert.equal((await picotool.fromFile(textPath)).sections.lua.join(''), 'print(42)\n');
+    // Python retains the uncompressed PNG decoder's appended newline.
+    assert.equal((await picotool.fromFile(textPath)).sections.lua.join(''), 'print(42)\n\n');
     assert.throws(() => picotool.formatForFilename('game.txt'), (error) =>
       error instanceof picotool.UnrecognizedFileType && error.filename === 'game.txt');
     assert.equal(picotool.formatForFilename('game.rom'), 'rom');
@@ -58,7 +59,7 @@ async function main() {
     assert.equal(loadedGame.lua.to_lines().join(''), 'x=1\n');
     assert.equal(loadedGame.gff._data[0], 0x5a);
     await picotool.toFile(loadedGame, pngPath);
-    assert.equal((await picotool.Game.fromFile(pngPath)).lua.toLines().join(''), 'x=1\n');
+    assert.equal((await picotool.Game.fromFile(pngPath)).lua.toLines().join(''), 'x=1\n\n');
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

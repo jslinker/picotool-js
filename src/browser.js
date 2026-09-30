@@ -6,7 +6,7 @@ module.exports = Object.freeze({
   ...require('./p8png'),
   ...require('./png-transport'),
   ...require('./cartridge'),
-  ...require('./game'),
+  ...require('./game-browser'),
   ...require('./lua-lexer'),
   ...require('./lua-ast-model'),
   ...require('./lua-ast-walker'),

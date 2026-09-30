@@ -5,16 +5,22 @@
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "browser": "src/browser.js",
-  "bin": { "p8tool": "tools/p8tool.cjs" },
+  "bin": {
+    "p8tool": "tools/p8tool.cjs"
+  },
   "files": [
     "src/",
     "tools/p8tool.cjs",
     "LICENSE",
-    "README.md"
+    "README.md",
+    "PARITY.md",
+    "PARITY-AUDIT.md",
+    "DEVELOPMENT.md",
+    "browser/"
   ],
   "license": "MIT",
   "scripts": {
-    "test": "node tools/file-api-test.cjs && node tools/token-model-test.cjs && node tools/cli-test.cjs && node tools/png-edge-test.cjs && node tools/lua-find-test.cjs && node tools/unimplemented-test.cjs && node tools/ast-walker-test.cjs && node tools/ast-walker-oracle-test.cjs && node tools/ast-model-test.cjs && node tools/ast-oracle-test.cjs && node tools/check-parity.cjs",
+    "test": "npm run test:js && npm run test:oracle && npm run test:types",
     "test:file-api": "node tools/file-api-test.cjs",
     "test:cli": "node tools/cli-test.cjs",
     "test:png-edge": "node tools/png-edge-test.cjs",
@@ -23,9 +29,45 @@
     "test:ast-walker": "node tools/ast-walker-test.cjs && node tools/ast-walker-oracle-test.cjs",
     "test:ast-model": "node tools/ast-model-test.cjs && node tools/ast-oracle-test.cjs",
     "test:token-model": "node tools/token-model-test.cjs",
-    "test:parity": "node tools/check-parity.cjs"
+    "test:parity": "node tools/check-parity.cjs",
+    "test:js": "node tools/run-js-tests.cjs",
+    "test:oracle": "node tools/run-oracle-tests.cjs",
+    "test:env": "node tools/test-env-test.cjs",
+    "test:python-baseline": "node tools/run-python.cjs tools/python-suite-baseline-test.py",
+    "test:coverage": "node tools/coverage-inventory-test.cjs && node tools/coverage-differential-test.cjs && node tools/generated-domain-test.cjs",
+    "test:types": "node tools/type-surface-test.cjs",
+    "test:package": "node tools/package-smoke-test.cjs",
+    "test:browser": "node tools/browser-smoke-test.cjs",
+    "check:all": "npm test && npm run test:package && npm run test:browser",
+    "test:catalog": "node tools/check-test-catalog.cjs"
   },
   "dependencies": {
     "fast-png": "^8.0.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "exports": {
+    ".": {
+      "browser": {
+        "types": "./src/browser.d.ts",
+        "default": "./src/browser.js"
+      },
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./browser": {
+      "types": "./src/browser.d.ts",
+      "default": "./src/browser.js"
+    },
+    "./package.json": "./package.json",
+    "./src": "./src/index.js",
+    "./src/*.js": "./src/*.js",
+    "./src/*": "./src/*.js"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "playwright": "1.63.0",
+    "typescript": "5.9.3"
   }
 }

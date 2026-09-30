@@ -1,3 +1,4 @@
+export * from './core';
 export type P8SectionName = 'lua' | 'gfx' | 'gff' | 'map' | 'sfx' | 'music' | 'label';
 export type BuildDomainName = Exclude<P8SectionName, 'label'>;
 
@@ -9,6 +10,7 @@ export interface ParsedP8 {
 }
 
 export class P8Error extends Error {
+  constructor(code: string, message: string, details?: unknown);
   readonly code: string;
   readonly details?: unknown;
 }
@@ -63,10 +65,18 @@ export function listLua(source: ParsedP8 | string | Uint8Array | ArrayBuffer, op
   pure?: boolean; showLineNumbers?: boolean;
 }): string;
 export function listTokens(source: ParsedP8 | string | Uint8Array | ArrayBuffer): string;
+export function linesForTab(lines: string[], tab: number | null): string[];
+export function getRootIncludePath(filename: string | null): string | null;
+export function findRequireCalls(source: string | Uint8Array): Array<{
+  path: string; useGameLoop: boolean; token: Token;
+}>;
+export function locateRequireFile(moduleName: string, filename: string, options?: {
+  files?: Record<string, string | Uint8Array>; luaPath?: string;
+}): string | null;
 export function bundleRequiredLua(source: string | Uint8Array, options?: {
   filename?: string; files?: Record<string, string | Uint8Array>; luaPath?: string;
 }): Uint8Array;
-export class LuaBuildError extends Error {}
+export class LuaBuildError extends Error { constructor(message: string, token: { line: number; column: number }); }
 export function decodePng(input: Uint8Array | ArrayBuffer): Promise<{
   width: number; height: number; rgba: Uint8Array;
 }>;
@@ -82,6 +92,7 @@ export function makeEmptyCartridge(options?: { filename?: string; version?: numb
 export function writeCartData(cartridge: any, data: Uint8Array | number[], startAddress?: number): any;
 export function cartridgeCompressedSize(cartridge: any): number;
 export class UnrecognizedFileType extends P8Error {
+  constructor(filename: string);
   readonly filename: string;
 }
 export function formatForFilename(filename: string): 'p8' | 'p8.png' | 'rom';
@@ -151,7 +162,14 @@ export class Token {
 export class TokSpace extends Token {}
 export class TokNewline extends Token {}
 export class TokComment extends Token {}
-export class TokString extends Token { readonly value: string; }
+export class TokString extends Token {
+  constructor(data: string | Uint8Array, line?: number | null, column?: number | null,
+    options?: { quote?: string; multilineQuote?: string | null });
+  static fromCode(code: string | Uint8Array, line?: number | null, column?: number | null): TokString;
+  quote: string;
+  multilineQuote: string | null;
+  readonly value: string;
+}
 export class TokNumber extends Token { readonly value: number; }
 export class TokName extends Token {}
 export class TokLabel extends Token {}
@@ -165,7 +183,7 @@ export function analyzeLua(source: string | Uint8Array, filename?: string): {
 export function echoLua(source: string | Uint8Array): Uint8Array;
 export function findLua(source: ParsedP8 | string | Uint8Array | ArrayBuffer,
   pattern: string | RegExp, options?: { filename?: string; listFiles?: boolean }): string;
-export class LuaAstError extends SyntaxError {}
+export class LuaAstError extends SyntaxError { msg?: string; token?: Token | null; }
 export class Node {
   constructor(type: string, fields?: Record<string, unknown>, first?: unknown, last?: unknown, source?: string);
   type: string;
@@ -219,7 +237,22 @@ export class TableConstructor extends Node { constructor(fields: Node[], options
 export class FieldExp extends Node { constructor(exp: Node, options?: AstNodeOptions); exp: Node; }
 export class FieldExpKey extends Node { constructor(key_exp: Node, exp: Node, options?: AstNodeOptions); key_exp: Node; exp: Node; }
 export class FieldNamedKey extends Node { constructor(key_name: TokName, exp: Node, options?: AstNodeOptions); key_name: TokName; exp: Node; }
-export class AstParser { constructor(source: string | Uint8Array); parse(): Chunk; }
+export class AstParser {
+  constructor(source: string | Uint8Array);
+  parse(): Chunk;
+  /** Exclusive limit in the complete token stream (including trivia); null means unlimited. */
+  maxTokenPos: number | null;
+  namelist(): NameList | null;
+  variable(): VarName | VarIndex | VarAttribute | null;
+  varlist(): VarList | null;
+  field(): FieldExp | FieldExpKey | FieldNamedKey | null;
+  expressionFragment(): Node | null;
+  explistFragment(): Node[] | null;
+  funcNameFragment(): FunctionName | null;
+  functionCallFragment(): FunctionCall | FunctionCallMethod | null;
+  lastStatFragment(): StatBreak | StatReturn | null;
+  assertNode<T>(value: T | null | undefined, message: string): T;
+}
 export function parseLua(source: string | Uint8Array): Chunk;
 export function parseLuaAst(source: string | Uint8Array): Chunk;
 export function printAst(source: string | Uint8Array): string;
@@ -235,3 +268,19 @@ export class BaseASTWalker {
   protected _walk_value(value: unknown): IterableIterator<unknown>;
   walk(): IterableIterator<unknown>;
 }
+
+export const DEFAULT_VERSION: 33;
+export class P8IncludeNotFound extends Error {}
+export class P8IncludeOutsideOfAllowedDirectory extends Error {}
+export class LexerError extends SyntaxError {
+  constructor(message: string, line: number, column: number);
+  lineno: number;
+  charno: number;
+}
+export const TOKEN_CLASSES: Readonly<{
+  space: typeof TokSpace; newline: typeof TokNewline; comment: typeof TokComment;
+  string: typeof TokString; number: typeof TokNumber; name: typeof TokName;
+  label: typeof TokLabel; keyword: typeof TokKeyword; symbol: typeof TokSymbol;
+}>;
+export function createToken<K extends keyof typeof TOKEN_CLASSES>(type: K, code: string | Uint8Array,
+  line?: number | null, column?: number | null): InstanceType<(typeof TOKEN_CLASSES)[K]>;

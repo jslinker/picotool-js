@@ -3,7 +3,7 @@
 
 const { readFileSync, readdirSync, writeFileSync, mkdtempSync, rmSync, existsSync } = require('node:fs');
 const { join, resolve, basename } = require('node:path');
-const { spawnSync } = require('node:child_process');
+const { spawnSync: spawnProcess } = require('node:child_process');
 const { tmpdir } = require('node:os');
 const { analyzeLua, tokenizeLua, echoLua } = require('../src/lua-lexer');
 const { validateLua } = require('../src/lua-parser');
@@ -13,16 +13,12 @@ const { echoLuaAst, minifyLuaAst, formatLuaAst } = require('../src/lua-ast-write
 const { pureLua } = require('../src/lua-pure');
 const { cartridgeStats } = require('../src/stats');
 const { listLua, listTokens } = require('../src/listing');
+const testEnv = require('./test-env.cjs');
+const spawnSync = (command, args, options) => spawnProcess(command, args, { ...options, env: { ...testEnv.pythonEnv, ...options?.env } });
 
-const packageRoot = resolve(__dirname, '..');
-const bundledOracle = resolve(packageRoot, 'vendor/picotool');
-const monorepoOracle = resolve(packageRoot, '../../vendor/picotool');
-const picotoolRoot = process.env.PICOTOOL_ROOT
-  ? resolve(process.env.PICOTOOL_ROOT)
-  : existsSync(bundledOracle) ? bundledOracle : monorepoOracle;
-const fixturesRoot = process.env.PICOTOOL_FIXTURES_ROOT
-  ? resolve(process.env.PICOTOOL_FIXTURES_ROOT)
-  : join(picotoolRoot, 'tests/testdata');
+const packageRoot = testEnv.packageRoot;
+const picotoolRoot = testEnv.picotoolRoot;
+const fixturesRoot = testEnv.fixturesRoot;
 const upstreamFixtures = readdirSync(fixturesRoot)
   .filter((name) => name.endsWith('.p8') || name.endsWith('.p8.png'))
   .sort()
@@ -60,7 +56,7 @@ function generatedFixtures(directory) {
 }
 
 async function check(fixtures) {
-  const python = spawnSync(process.env.PYTHON || 'python3',
+  const python = spawnSync(testEnv.python,
     [join(__dirname, 'python_oracle.py'), ...fixtures], { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
   if (python.error || python.status !== 0) {
     throw new Error(`Python oracle failed: ${python.error?.message || python.stderr}`);
@@ -80,7 +76,7 @@ async function check(fixtures) {
   const tests = await PicotoolBrowserTests.run();
   const comparison = PicotoolReportUtils.compareParity({ parity: { cases } }, oracle);
   const sectionFixtures = fixtures.filter((path) => path.endsWith('.p8') && !basename(path).includes('invalid'));
-  const pythonSections = spawnSync(process.env.PYTHON || 'python3',
+  const pythonSections = spawnSync(testEnv.python,
     [join(__dirname, 'python_oracle.py'), '--sections', ...sectionFixtures],
     { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
   if (pythonSections.error || pythonSections.status !== 0) {
@@ -102,7 +98,7 @@ async function check(fixtures) {
     }
   }
   const sectionComparison = PicotoolReportUtils.compareParity({ parity: { cases: sectionCases } }, sectionOracle);
-  const pythonWriter = spawnSync(process.env.PYTHON || 'python3',
+  const pythonWriter = spawnSync(testEnv.python,
     [join(__dirname, 'python_oracle.py'), '--write', ...sectionFixtures],
     { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
   if (pythonWriter.error || pythonWriter.status !== 0) {
@@ -114,7 +110,7 @@ async function check(fixtures) {
     value: Buffer.from(PicotoolJS.writeP8(readFileSync(fixture))).toString('base64'),
   }));
   const writerComparison = PicotoolReportUtils.compareParity({ parity: { cases: writerCases } }, writerOracle);
-  const pythonMinifiedWriter = spawnSync(process.env.PYTHON || 'python3',
+  const pythonMinifiedWriter = spawnSync(testEnv.python,
     [join(__dirname, 'python_oracle.py'), '--write-minify', ...sectionFixtures],
     { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
   if (pythonMinifiedWriter.error || pythonMinifiedWriter.status !== 0) {
@@ -127,7 +123,7 @@ async function check(fixtures) {
   }));
   const minifiedWriterComparison = PicotoolReportUtils.compareParity(
     { parity: { cases: minifiedWriterCases } }, minifiedWriterOracle);
-  const pythonFormattedWriter = spawnSync(process.env.PYTHON || 'python3',
+  const pythonFormattedWriter = spawnSync(testEnv.python,
     [join(__dirname, 'python_oracle.py'), '--write-format-token', ...sectionFixtures],
     { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
   if (pythonFormattedWriter.error || pythonFormattedWriter.status !== 0) {
@@ -144,7 +140,7 @@ async function check(fixtures) {
   const astWriterComparisons = {};
   const astWriterDetails = {};
   for (const mode of ['echo', 'minify', 'format']) {
-    const pythonAstWriter = spawnSync(process.env.PYTHON || 'python3',
+    const pythonAstWriter = spawnSync(testEnv.python,
       [join(__dirname, 'python_oracle.py'), `--write-ast-${mode}`, ...astWriterFixtures],
       { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
     if (pythonAstWriter.error || pythonAstWriter.status !== 0) {
@@ -159,7 +155,7 @@ async function check(fixtures) {
     astWriterDetails[mode] = { oracle, cases };
   }
   const baseFixture = join(fixturesRoot, 'test_cart.p8');
-  const pythonWriterScenarios = spawnSync(process.env.PYTHON || 'python3',
+  const pythonWriterScenarios = spawnSync(testEnv.python,
     [join(__dirname, 'python_oracle.py'), '--write-scenarios', baseFixture],
     { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
   if (pythonWriterScenarios.error || pythonWriterScenarios.status !== 0) {
@@ -229,7 +225,7 @@ async function check(fixtures) {
     const parsed = PicotoolJS.parseP8(readFileSync(fixture));
     luaScenarios.push({ id: `fixture-${basename(fixture)}`, source: (parsed.sections.lua || []).join('') });
   }
-  const pythonLua = spawnSync(process.env.PYTHON || 'python3',
+  const pythonLua = spawnSync(testEnv.python,
     [join(__dirname, 'python_oracle.py'), '--lua-diagnostics'],
     { input: JSON.stringify(luaScenarios), encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
   if (pythonLua.error || pythonLua.status !== 0) {
@@ -248,7 +244,7 @@ async function check(fixtures) {
     return { id: `lua/${scenario.id}`, status: 'ok', value };
   });
   const luaComparison = PicotoolReportUtils.compareParity({ parity: { cases: luaCases } }, luaOracle);
-  const pythonParserCorpus = spawnSync(process.env.PYTHON || 'python3',
+  const pythonParserCorpus = spawnSync(testEnv.python,
     [join(__dirname, 'python_oracle.py'), '--parser-corpus'],
     { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
   if (pythonParserCorpus.error || pythonParserCorpus.status !== 0) {
@@ -268,7 +264,7 @@ async function check(fixtures) {
   const parserCorpusComparison = PicotoolReportUtils.compareParity(
     { parity: { cases: parserCorpusCases } },
     { parity: { cases: parserCorpusOracle.parity.cases.map(({ source, ...entry }) => entry) } });
-  const pythonLexerCorpus = spawnSync(process.env.PYTHON || 'python3',
+  const pythonLexerCorpus = spawnSync(testEnv.python,
     [join(__dirname, 'python_oracle.py'), '--lexer-corpus'],
     { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
   if (pythonLexerCorpus.error || pythonLexerCorpus.status !== 0) {
@@ -296,7 +292,7 @@ async function check(fixtures) {
     { id: 'missing-if-end', source: 'if true then' },
     { id: 'unterminated-string', source: 'print("oops)' },
   ];
-  const pythonWriterDiagnostics = spawnSync(process.env.PYTHON || 'python3',
+  const pythonWriterDiagnostics = spawnSync(testEnv.python,
     [join(__dirname, 'python_oracle.py'), '--writer-diagnostics', baseFixture],
     { input: JSON.stringify(writerDiagnosticScenarios), encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
   if (pythonWriterDiagnostics.error || pythonWriterDiagnostics.status !== 0) {
@@ -343,7 +339,7 @@ async function check(fixtures) {
       data: Buffer.from('require("lib",{use_game_loop=true})\n'), filename: 'main.lua',
       files: { 'lib.lua': Buffer.from('x=3\nfunction _draw() print(1) end\nreturn x\n') } } } },
   ];
-  const pythonBuild = spawnSync(process.env.PYTHON || 'python3',
+  const pythonBuild = spawnSync(testEnv.python,
     [join(__dirname, 'python_oracle.py'), '--build-cases'],
     { input: JSON.stringify(buildScenarios.map((scenario) => ({
       id: scenario.id, empty: scenario.empty,
@@ -388,7 +384,7 @@ async function check(fixtures) {
       'sub/main.p8': includeCart('#include ../outside.lua\n'),
       'outside.lua': Buffer.from('print(9)\n') } },
   ];
-  const pythonIncludes = spawnSync(process.env.PYTHON || 'python3',
+  const pythonIncludes = spawnSync(testEnv.python,
     [join(__dirname, 'python_oracle.py'), '--include-cases'],
     { input: JSON.stringify(includeScenarios.map((scenario) => ({
       id: scenario.id, main: scenario.main,
@@ -422,7 +418,7 @@ async function check(fixtures) {
     { id: 'numeric-escape', source: 'print("a\\123")\n' },
     { id: 'label', source: '::again::\nvalue += 1\nif (value<3) goto again\n' },
   ];
-  const pythonMinify = spawnSync(process.env.PYTHON || 'python3',
+  const pythonMinify = spawnSync(testEnv.python,
     [join(__dirname, 'python_oracle.py'), '--minify-cases'],
     { input: JSON.stringify(minifyScenarios), encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
   if (pythonMinify.error || pythonMinify.status !== 0) {
@@ -442,7 +438,7 @@ async function check(fixtures) {
     { id: 'loop', source: 'for i=1,3 do\nprint(i)\nend\n' },
     { id: 'custom-indent', source: 'if true then\nprint(1)\nend\n', indentwidth: 4 },
   ];
-  const pythonFormat = spawnSync(process.env.PYTHON || 'python3',
+  const pythonFormat = spawnSync(testEnv.python,
     [join(__dirname, 'python_oracle.py'), '--format-token-cases'],
     { input: JSON.stringify(formatScenarios), encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
   if (pythonFormat.error || pythonFormat.status !== 0) {
@@ -450,7 +446,7 @@ async function check(fixtures) {
   }
   const formatOracle = JSON.parse(pythonFormat.stdout);
   const formatCases = formatScenarios.map((scenario) => ({ id: `format-token/${scenario.id}`, status: 'ok',
-    value: formatLuaTokens(scenario.source, scenario).toString('base64') }));
+    value: Buffer.from(formatLuaTokens(scenario.source, scenario)).toString('base64') }));
   const formatComparison = PicotoolReportUtils.compareParity({ parity: { cases: formatCases } }, formatOracle);
   const b64 = (source) => Buffer.from(source, 'utf8').toString('base64');
   const requireScenarios = [
@@ -495,7 +491,7 @@ async function check(fixtures) {
     { id: 'string-call-syntax', source: b64('require "lib"\n'), files: { 'lib.lua': b64('return 5\n') } },
     { id: 'table-call-syntax', source: b64('require {"lib"}\n'), files: { 'lib.lua': b64('return 5\n') } },
   ];
-  const pythonRequire = spawnSync(process.env.PYTHON || 'python3',
+  const pythonRequire = spawnSync(testEnv.python,
     [join(__dirname, 'python_oracle.py'), '--require-cases'],
     { input: JSON.stringify(requireScenarios), encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
   if (pythonRequire.error || pythonRequire.status !== 0) {
@@ -544,7 +540,7 @@ async function check(fixtures) {
       { id: `variant-${index}-comments`, source: b64(`-- heading\n${source.replace(/\n/g, ' -- line\n')}`) },
     ]),
   ];
-  const pythonAst = spawnSync(process.env.PYTHON || 'python3',
+  const pythonAst = spawnSync(testEnv.python,
     [join(__dirname, 'python_oracle.py'), '--ast-writer-cases'],
     { input: JSON.stringify(astScenarios), encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
   if (pythonAst.error || pythonAst.status !== 0) {
@@ -564,7 +560,7 @@ async function check(fixtures) {
     return { id: `ast-writer/${mode}/${scenario.id}`, status: 'ok', value };
   }));
   const astComparison = PicotoolReportUtils.compareParity({ parity: { cases: astCases } }, astOracle);
-  const pythonAstCorpus = spawnSync(process.env.PYTHON || 'python3',
+  const pythonAstCorpus = spawnSync(testEnv.python,
     [join(__dirname, 'python_oracle.py'), '--ast-writer-corpus'],
     { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
   if (pythonAstCorpus.error || pythonAstCorpus.status !== 0) {
@@ -600,7 +596,7 @@ async function check(fixtures) {
     ...astWriterFixtures.map((fixture) => ({ id: `fixture-${basename(fixture)}`, source: Buffer.from(PicotoolJS.encodeP8scii(
       (PicotoolJS.parseP8(readFileSync(fixture)).sections.lua || []).join(''))).toString('base64') })),
   ];
-  const pythonPure = spawnSync(process.env.PYTHON || 'python3',
+  const pythonPure = spawnSync(testEnv.python,
     [join(__dirname, 'python_oracle.py'), '--pure-lua-cases'],
     { input: JSON.stringify(pureScenarios), encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
   if (pythonPure.error || pythonPure.status !== 0) {
@@ -614,7 +610,7 @@ async function check(fixtures) {
     return { id: `pure-lua/${scenario.id}`, status: 'ok', value };
   });
   const pureComparison = PicotoolReportUtils.compareParity({ parity: { cases: pureCases } }, pureOracle);
-  const pythonStats = spawnSync(process.env.PYTHON || 'python3',
+  const pythonStats = spawnSync(testEnv.python,
     [join(__dirname, 'python_oracle.py'), '--stats', ...sectionFixtures],
     { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
   if (pythonStats.error || pythonStats.status !== 0) {
@@ -636,7 +632,7 @@ async function check(fixtures) {
     ...astWriterFixtures.map((fixture) => ({ id: basename(fixture), source: Buffer.from(PicotoolJS.encodeP8scii(
       (PicotoolJS.parseP8(readFileSync(fixture)).sections.lua || []).join(''))).toString('base64') })),
   ];
-  const pythonCompress = spawnSync(process.env.PYTHON || 'python3',
+  const pythonCompress = spawnSync(testEnv.python,
     [join(__dirname, 'python_oracle.py'), '--compress-cases'],
     { input: JSON.stringify(compressScenarios), encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
   if (pythonCompress.error || pythonCompress.status !== 0) {
@@ -652,7 +648,7 @@ async function check(fixtures) {
     { id: 'pure', source: cartA.toString('base64'), pure: true },
     { id: 'high-chars', source: readFileSync(sectionFixtures.find((fixture) => basename(fixture) === 'generated-lua-p8scii.p8')).toString('base64') },
   ];
-  const pythonListing = spawnSync(process.env.PYTHON || 'python3',
+  const pythonListing = spawnSync(testEnv.python,
     [join(__dirname, 'python_oracle.py'), '--listing-cases'],
     { input: JSON.stringify(listingScenarios), encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
   if (pythonListing.error || pythonListing.status !== 0) {
@@ -670,7 +666,7 @@ async function check(fixtures) {
     { id: 'strings', source: includeCart('print("a\\n\\123")\nprint([=[multi]=])\n').toString('base64') },
     { id: 'high-chars', source: includeCart('-- ♥\nlocal あ="★"\n').toString('base64') },
   ];
-  const pythonTokenListing = spawnSync(process.env.PYTHON || 'python3',
+  const pythonTokenListing = spawnSync(testEnv.python,
     [join(__dirname, 'python_oracle.py'), '--token-listing-cases'],
     { input: JSON.stringify(tokenListingScenarios), encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
   if (pythonTokenListing.error || pythonTokenListing.status !== 0) {
@@ -691,7 +687,7 @@ async function check(fixtures) {
     { id: 'last-byte', start: 0x42ff, data: Buffer.from([14]).toString('base64'), version: 8 },
     { id: 'too-large', start: 0x42ff, data: Buffer.from([1, 2]).toString('base64') },
   ];
-  const pythonCartMemory = spawnSync(process.env.PYTHON || 'python3',
+  const pythonCartMemory = spawnSync(testEnv.python,
     [join(__dirname, 'python_oracle.py'), '--cart-memory-cases'],
     { input: JSON.stringify(cartMemoryScenarios), encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
   if (pythonCartMemory.error || pythonCartMemory.status !== 0) {
@@ -751,7 +747,7 @@ async function check(fixtures) {
     const expectedLua = PicotoolJS.decodeP8scii(echoLua(PicotoolJS.parseP8PngPicodata(original).code.code));
     pngIncludeCases.push({ id: `png-include/${name}`, status: includedLua === expectedLua ? 'pass' : 'fail' });
   }
-  const pythonPngEmbed = spawnSync(process.env.PYTHON || 'python3',
+  const pythonPngEmbed = spawnSync(testEnv.python,
     [join(__dirname, 'python_oracle.py'), '--png-embed-cases'],
     { input: JSON.stringify(pngEmbedScenarios), encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
   if (pythonPngEmbed.error || pythonPngEmbed.status !== 0) {

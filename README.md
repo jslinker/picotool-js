@@ -8,7 +8,7 @@ The implemented Node workflows have extensive differential tests against Python 
 
 ## Set up from GitHub
 
-Install Node.js and npm, then clone and install this repository:
+Install Node.js 22 or newer and npm, then clone and install this repository:
 
 ```sh
 git clone https://github.com/jslinker/picotool-js.git
@@ -17,7 +17,7 @@ npm ci
 node tools/p8tool.cjs --help
 ```
 
-No compilation step is required. The September 2026 audit ran on Node.js 26.7.0; the repository does not yet declare or test a minimum Node version.
+No compilation step is required. The package declares Node.js 22 or newer; the September 2026 audit ran on Node.js 26.7.0.
 
 All commands below assume you are in this repository's root. To make `p8tool` available on your PATH, optionally run:
 
@@ -151,6 +151,12 @@ For the existing browser test demo, open [`browser/index.html`](browser/index.ht
 
 ## Compatibility and tests
 
+The [upstream test coverage](tests/parity/README.md) maps all 308 Python tests: 301 named JS mappings and seven deferred feature TODOs (custom writers and logging). Mappings include documented adaptations and do not prove identical internal contracts. Run `npm run test:catalog` to validate the catalog. Four build tests have documented obsolete Python fixture-save calls.
+
+**Open contribution: custom Lua writers.** Built-in JS writer functions work, but Python's `BaseLuaWriter` subclass interface and its integration with Lua output are not implemented. The maintainer does not need this extension interface for the current project; contributions are welcome. See the [commented TODO beside the writer tests](tools/lua-source-parity-test.cjs). A useful PR should support a working custom writer and test its integration, as well as rejection of the unimplemented base method.
+
+**Open contribution: shared logging and verbosity.** The maintainer chose not to add a logging utility for this project. JS callers provide output callbacks; Python's shared verbosity and logging-stream API is absent. The six [commented utility TODOs](tools/base-section-test.cjs) document the expected output routing and quiet/debug filtering for a future implementation. They are not counted as passing parity tests.
+
 Compatibility targets the upstream Python revision recorded in [PARITY-AUDIT.md](PARITY-AUDIT.md), not every feature of current PICO-8. Known boundaries include:
 
 - `.rom`, token optimization, and property-name-preserving minification remain unimplemented, as in the reference implementation.
@@ -158,18 +164,57 @@ Compatibility targets the upstream Python revision recorded in [PARITY-AUDIT.md]
 - PNG parity compares cartridge bytes and visible pixel data, not identical compressed PNG files. Invalid labels and oversized code are rejected.
 - Some upstream AST-writer failures are intentionally retained. See [PARITY.md](PARITY.md) for details.
 
-For the main differential harness, obtain the reference checkout and select its revision:
+### Run Python and JavaScript tests
+
+After `npm ci`, install Python 3 with `venv` support and Git. From the repository root, set up the pinned Python reference environment:
 
 ```sh
-git clone https://github.com/dansanderson/picotool.git vendor/picotool
-git -C vendor/picotool checkout 49808e5ddb21e886a5608a19c95ec3ca6f1ee541
-npm run test:parity
-python3 tools/python_suite_report.py
+python3 tools/setup-oracle.py
 ```
 
-Python 3 is needed only for development checks. The main harness supports `PICOTOOL_ROOT`, `PICOTOOL_FIXTURES_ROOT`, and `PYTHON` environment overrides. The Python suite also needs `pypng` for its PNG tests.
+On Windows, use `py -3` instead of `python3` if needed. Setup downloads the pinned picotool checkout to `vendor/picotool`, creates `.oracle-venv`, and installs the pinned `pypng` dependency. It requires network access. The test commands automatically find this environment; no virtual-environment activation is needed. Python is only required for development/reference checks, not library or CLI use.
 
-**Current test setup limitation:** `npm test` passes in the original monorepo layout, but several component tests hard-code `../../vendor/picotool` and `python3`. A standalone clone with `vendor/picotool` can run the main `test:parity` harness, but cannot yet run the complete aggregate suite using that layout. Fixing this is the first item in the [completion plan](PARITY-AUDIT.md). The older [development guide](DEVELOPMENT.md) contains additional oracle workflows, including commands specific to the original monorepo.
+Run the suites separately:
+
+```sh
+# Original Python suite, checked against the known upstream baseline
+npm run test:python-baseline
+
+# JavaScript tests, including named upstream ports and feature TODOs
+npm run test:js
+
+# Validate all upstream-to-JS test mappings
+npm run test:catalog
+```
+
+The expected Python baseline is **308 tests: 304 passes and four known fixture-setup errors** caused by obsolete `Game.to_p8_file` calls. The baseline command succeeds when those exact expected errors occur; unexpected failures or baseline drift fail it. The JS suite includes **seven intentional feature TODOs**, which are not passing tests. JS also has additional regression tests, so its test count need not equal Python's.
+
+### Compare the implementations
+
+```sh
+# Run both implementations on shared inputs and compare their results
+npm run test:parity
+
+# Broader Python-backed checks, including AST and generated-data comparisons
+npm run test:oracle
+```
+
+The parity harness compares emitted bytes, token results, cartridge data, and supported writer output. Mismatches cause a nonzero exit status and appear in its report. The Python and JS unit-test logs are not directly comparable line by line; use this harness for behavioral comparison. Matching results cover the tested inputs and documented adaptations, not every Python API contract.
+
+To save reports for inspection (these files are written to the system temporary directory):
+
+```sh
+# macOS/Linux shell
+node tools/run-python.cjs tools/python_suite_report.py > /tmp/picotool-python-tests.json
+npm run test:js > /tmp/picotool-js-tests.txt 2>&1
+node tools/check-parity.cjs > /tmp/picotool-parity-comparison.json
+```
+
+On Windows, choose equivalent paths under your temporary directory. The raw Python JSON report includes the known upstream errors; `test:python-baseline` is the command that validates them. Running the comparison script directly keeps npm's command banner out of the JSON report.
+
+To reuse an existing reference checkout, run `python3 tools/setup-oracle.py --root /path/to/picotool` and set `PICOTOOL_ROOT` to that checkout when testing. It must match the revision in [oracle-pin.json](tools/oracle-pin.json). `PICOTOOL_FIXTURES_ROOT` and `PYTHON` can override the fixture directory and interpreter; otherwise the tests use the checkout's fixtures and `.oracle-venv` interpreter.
+
+`npm test` combines the JS suite, oracle checks, and TypeScript checks. **Known limitation:** the browser declaration/runtime export comparison currently fails even when the JS and Python parity suites pass. This is a separate type-surface issue, not an expected Python baseline error. See [DEVELOPMENT.md](DEVELOPMENT.md) for additional browser and oracle workflows.
 
 ## License
 

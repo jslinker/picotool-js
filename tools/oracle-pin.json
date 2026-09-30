@@ -1,0 +1,5 @@
+{
+  "repository": "https://github.com/dansanderson/picotool.git",
+  "revision": "49808e5ddb21e886a5608a19c95ec3ca6f1ee541",
+  "pypng": "pypng==0.20220715.0"
+}

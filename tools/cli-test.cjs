@@ -6,6 +6,7 @@ const { join } = require('node:path');
 const { mkdtempSync, rmSync } = require('node:fs');
 const { tmpdir } = require('node:os');
 const { spawnSync } = require('node:child_process');
+const { fixture, python, pythonEnv, picotoolRoot } = require('./test-env.cjs');
 const { formatStats, main, mainAsync, parseArgs, statsRows } = require('../src/cli');
 
 const pythonEventOracle = String.raw`import argparse,json,sys
@@ -26,8 +27,8 @@ function collapseEvents(events) {
   return collapsed;
 }
 function comparePythonEvents(command, filenames) {
-  const result = spawnSync('python3', ['-c', pythonEventOracle, command, ...filenames], {
-    env: { ...process.env, PYTHONPATH: '../../vendor/picotool' },
+  const result = spawnSync(python, ['-c', pythonEventOracle, command, ...filenames], {
+    env: pythonEnv,
   });
   assert.strictEqual(result.status, 0, result.stderr.toString());
   const expected = JSON.parse(result.stdout.toString());
@@ -38,7 +39,7 @@ function comparePythonEvents(command, filenames) {
   assert.strictEqual(status, expected.status, `${command}: exit status`);
   assert.deepStrictEqual(collapseEvents(events), collapseEvents(expected.events), `${command}: ordered output/error events`);
 }
-const upstreamCart = resolve(__dirname, '../../../vendor/picotool/tests/testdata/test_cart.p8');
+const upstreamCart = fixture('test_cart.p8');
 const pythonCliMain = String.raw`import sys
 from pico8 import tool
 sys.exit(tool.main(sys.argv[1:]))`;
@@ -48,15 +49,15 @@ for (const argv of [
   ['build', '--lua-path'], ['luamin', '--keep-names-from-file'],
   ['build', 'one.p8', 'two.p8'],
 ]) {
-  const pythonResult = spawnSync('python3', ['-c', pythonCliMain, ...argv], {
-    env: { ...process.env, PYTHONPATH: resolve(__dirname, '../../../vendor/picotool') },
+  const pythonResult = spawnSync(python, ['-c', pythonCliMain, ...argv], {
+    env: pythonEnv,
   });
   const javascriptStatus = main(argv, { write: () => {}, error: () => {} });
   assert.strictEqual(javascriptStatus, pythonResult.status, `argument-parser status: ${argv.join(' ')}`);
 }
 for (const argv of [['-h'], ['--help'], ['stats', '-h'], ['build', '--help']]) {
-  const pythonResult = spawnSync('python3', ['-c', pythonCliMain, ...argv], {
-    env: { ...process.env, PYTHONPATH: resolve(__dirname, '../../../vendor/picotool') },
+  const pythonResult = spawnSync(python, ['-c', pythonCliMain, ...argv], {
+    env: pythonEnv,
   });
   let help = '', errors = '';
   const javascriptStatus = main(argv, { write: (value) => { help += value; }, error: (value) => { errors += value; } });
@@ -70,7 +71,7 @@ assert.strictEqual(main([], { write: (value) => { noCommandHelp += value; }, err
 assert.match(noCommandHelp, /^usage: p8tool/);
 const fileSystem = require('node:fs');
 const writerOracleOutputs = new Map();
-for (const sourceCart of [upstreamCart, resolve(__dirname, '../../../vendor/picotool/tests/testdata/test_gol.p8')]) {
+for (const sourceCart of [upstreamCart, fixture('test_gol.p8')]) {
 for (const [command, options] of [['writep8', []], ['luamin', []], ['luamin', ['--keep-all-names']], ['luamin', ['--keep-names-from-file', '<names>']], ['luafmt', []], ['luafmt', ['--indentwidth', '4']], ['luafmt', ['--overwrite']]]) {
   const directory = mkdtempSync(join(tmpdir(), `picotool-writer-oracle-${command}-`));
   const input = join(directory, 'game.p8');
@@ -81,8 +82,8 @@ for (const [command, options] of [['writep8', []], ['luamin', []], ['luamin', ['
   try {
     fileSystem.writeFileSync(input, original);
     fileSystem.writeFileSync(namesFile, 'player\n # comment\n\n  x  \n');
-    const pythonResult = spawnSync('python3', ['-c', pythonCliMain, command, ...cliOptions, input], {
-      env: { ...process.env, PYTHONPATH: resolve(__dirname, '../../../vendor/picotool') },
+    const pythonResult = spawnSync(python, ['-c', pythonCliMain, command, ...cliOptions, input], {
+      env: pythonEnv,
     });
     assert.strictEqual(pythonResult.status, 0, pythonResult.stderr.toString());
     const pythonOutput = fileSystem.readFileSync(output);
@@ -100,7 +101,7 @@ for (const [command, options] of [['writep8', []], ['luamin', []], ['luamin', ['
   } finally { rmSync(directory, { recursive: true, force: true }); }
 }
 }
-const golSourceCart = resolve(__dirname, '../../../vendor/picotool/tests/testdata/test_gol.p8');
+const golSourceCart = fixture('test_gol.p8');
 assert.notDeepStrictEqual(writerOracleOutputs.get(`${golSourceCart}:luamin:--keep-names-from-file`), writerOracleOutputs.get(`${golSourceCart}:luamin:`), 'keep-names file must materially change complex-cart minification');
 for (const command of ['stats', 'listlua', 'listtokens', 'printast']) {
   comparePythonEvents(command, [upstreamCart, 'missing-extension.txt', upstreamCart]);
@@ -114,15 +115,15 @@ try {
   const malformedCart = join(fatalDirectory, 'malformed.p8');
   fileSystem.writeFileSync(malformedCart, 'pico-8 cartridge // http://www.pico-8.com\nversion 33\n__lua__\nx=\n');
   for (const command of ['stats', 'listlua', 'listtokens', 'printast']) {
-    const pythonSingle = spawnSync('python3', ['-c', pythonCliMain, command, malformedCart], {
-      env: { ...process.env, PYTHONPATH: resolve(__dirname, '../../../vendor/picotool') },
+    const pythonSingle = spawnSync(python, ['-c', pythonCliMain, command, malformedCart], {
+      env: pythonEnv,
     });
     const javascriptSingle = main([command, malformedCart], { write: () => {}, error: () => {} });
     assert.strictEqual(javascriptSingle, pythonSingle.status, `${command}: fatal single-file status`);
 
     const events = [];
-    const pythonMixedResult = spawnSync('python3', ['-c', pythonEventOracle, command, upstreamCart, malformedCart, upstreamCart], {
-      env: { ...process.env, PYTHONPATH: '../../vendor/picotool' },
+    const pythonMixedResult = spawnSync(python, ['-c', pythonEventOracle, command, upstreamCart, malformedCart, upstreamCart], {
+      env: pythonEnv,
     });
     assert.strictEqual(pythonMixedResult.status, 0, pythonMixedResult.stderr.toString());
     const pythonMixed = JSON.parse(pythonMixedResult.stdout.toString());
@@ -291,8 +292,8 @@ try {
   assert.doesNotMatch(keepFileBuild, /enemy_score/);
   const pythonBuildOutput = join(buildDirectory, 'python-built.p8');
   const javascriptBuildOutput = join(buildDirectory, 'javascript-built.p8');
-  const pythonBuild = spawnSync('python3', ['-c', pythonCliMain, 'build', '--lua', luaFile, pythonBuildOutput], {
-    env: { ...process.env, PYTHONPATH: resolve(__dirname, '../../../vendor/picotool') },
+  const pythonBuild = spawnSync(python, ['-c', pythonCliMain, 'build', '--lua', luaFile, pythonBuildOutput], {
+    env: pythonEnv,
   });
   assert.strictEqual(pythonBuild.status, 0, pythonBuild.stderr.toString());
   assert.strictEqual(pythonBuild.stdout.toString(), '');
@@ -306,8 +307,8 @@ try {
   const javascriptExisting = join(buildDirectory, 'javascript-existing.p8');
   require('fs').copyFileSync(upstreamCart, pythonExisting);
   require('fs').copyFileSync(upstreamCart, javascriptExisting);
-  const pythonExistingBuild = spawnSync('python3', ['-c', pythonCliMain, 'build', '--empty-gfx', pythonExisting], {
-    env: { ...process.env, PYTHONPATH: resolve(__dirname, '../../../vendor/picotool') },
+  const pythonExistingBuild = spawnSync(python, ['-c', pythonCliMain, 'build', '--empty-gfx', pythonExisting], {
+    env: pythonEnv,
   });
   assert.strictEqual(pythonExistingBuild.status, 0, pythonExistingBuild.stderr.toString());
   assert.strictEqual(main(['build', '--empty-gfx', javascriptExisting], {
@@ -322,8 +323,8 @@ try {
     ['build', '--lua', unsupportedSource, join(buildDirectory, 'unsupported-source.p8')],
     ['build', '--lua', luaFile, '--empty-lua', join(buildDirectory, 'conflict.p8')],
   ]) {
-    const pythonResult = spawnSync('python3', ['-c', pythonCliMain, ...argv], {
-      env: { ...process.env, PYTHONPATH: resolve(__dirname, '../../../vendor/picotool') },
+    const pythonResult = spawnSync(python, ['-c', pythonCliMain, ...argv], {
+      env: pythonEnv,
     });
     let javascriptError = '';
     const javascriptStatus = main(argv, { write: () => {}, error: (value) => { javascriptError += value; } });
@@ -339,27 +340,27 @@ try {
 } finally { rmSync(buildDirectory, { recursive: true, force: true }); }
 
 let astOutput = '';
-assert.strictEqual(main(['printast', resolve(__dirname, '../../../vendor/picotool/tests/testdata/test_cart.p8')], {
+assert.strictEqual(main(['printast', upstreamCart], {
   write: (text) => { astOutput += text; }, error: (text) => { throw new Error(text); },
 }), 0);
 assert.match(astOutput, /^Chunk\n  \* stats: \[list:\]/);
 assert.match(astOutput, /StatFunctionCall/);
-const vendoredAst = spawnSync('python3', ['-c', String.raw`import sys
+const vendoredAst = spawnSync(python, ['-c', String.raw`import sys
 from pico8 import tool
 from pico8.game import file
 game = file.from_file(sys.argv[1])
-tool._printast_node(game.lua.root)`, resolve(__dirname, '../../../vendor/picotool/tests/testdata/test_cart.p8')], {
-  env: { ...process.env, PYTHONPATH: '../../vendor/picotool' },
+tool._printast_node(game.lua.root)`, upstreamCart], {
+  env: pythonEnv,
 });
 assert.strictEqual(vendoredAst.status, 0, vendoredAst.stderr.toString());
 assert.strictEqual(astOutput, vendoredAst.stdout.toString());
-const golCart = resolve(__dirname, '../../../vendor/picotool/tests/testdata/test_gol.p8');
+const golCart = fixture('test_gol.p8');
 let golAstOutput = '';
 assert.strictEqual(main(['printast', golCart], { write: (value) => { golAstOutput += value; }, error: (value) => { throw new Error(value); } }), 0);
-const upstreamGolAst = spawnSync('python3', ['-c', String.raw`import sys
+const upstreamGolAst = spawnSync(python, ['-c', String.raw`import sys
 from pico8 import tool
 from pico8.game import file
-tool._printast_node(file.from_file(sys.argv[1]).lua.root)`, golCart], { env: { ...process.env, PYTHONPATH: '../../vendor/picotool' } });
+tool._printast_node(file.from_file(sys.argv[1]).lua.root)`, golCart], { env: pythonEnv });
 assert.strictEqual(upstreamGolAst.status, 0, upstreamGolAst.stderr.toString());
 assert.strictEqual(golAstOutput, upstreamGolAst.stdout.toString());
 const exactAstDirectory = mkdtempSync(join(tmpdir(), 'picotool-ast-test-'));
@@ -381,21 +382,21 @@ lexed.process_lines([source])
 parsed = parser.Parser(4)
 parsed.process_tokens(lexed.tokens)
 tool._printast_node(parsed.root)`;
-  const upstreamAst = spawnSync('python3', ['-c', printAstPython], {
+  const upstreamAst = spawnSync(python, ['-c', printAstPython], {
     input: Buffer.from('x=1\nprint(x)\n'),
-    env: { ...process.env, PYTHONPATH: '../../vendor/picotool' },
+    env: pythonEnv,
   });
   assert.strictEqual(upstreamAst.status, 0, upstreamAst.stderr.toString());
   assert.strictEqual(exactAst, upstreamAst.stdout.toString());
 } finally { rmSync(exactAstDirectory, { recursive: true, force: true }); }
 let astErrors = '', multiAstOutput = '';
-assert.strictEqual(main(['printast', 'missing.p8', resolve(__dirname, '../../../vendor/picotool/tests/testdata/test_cart.p8')], {
+assert.strictEqual(main(['printast', 'missing.p8', upstreamCart], {
   write: (text) => { multiAstOutput += text; }, error: (text) => { astErrors += text; },
 }), 0);
 assert.match(astErrors, /missing\.p8: could not load cart/);
 assert.match(multiAstOutput, /=== .*test_cart\.p8 ===\nChunk/);
 
-const png = resolve(__dirname, '../../../vendor/picotool/tests/testdata/test_cart.p8.png');
+const png = fixture('test_cart.p8.png');
 const pngOutput = png.replace(/\.p8\.png$/, '_fmt.p8.png');
 const pngBuildDirectory = mkdtempSync(join(tmpdir(), 'picotool-build-png-test-'));
 const pngBuildLua = join(pngBuildDirectory, 'main.lua');
@@ -436,7 +437,7 @@ mainAsync(['build', '--lua', pngBuildLua, '--lua-path', 'modules/?.lua', pngBuil
   rmSync(pngBuildDirectory, { recursive: true, force: true });
 }).catch((error) => { throw error; });
 let pngAst = '', textAst = '';
-assert.strictEqual(main(['printast', resolve(__dirname, '../../../vendor/picotool/tests/testdata/test_cart.p8')], {
+assert.strictEqual(main(['printast', upstreamCart], {
   write: (text) => { textAst += text; }, error: (text) => { throw new Error(text); },
 }), 0);
 mainAsync(['printast', png], {
@@ -505,7 +506,7 @@ mainAsync(['stats', png], {
   }).then(() => {
     const directory = mkdtempSync(join(tmpdir(), 'picotool-png-keep-names-'));
     const namesFile = join(directory, 'names.txt');
-    const golPng = resolve(__dirname, '../../../vendor/picotool/tests/testdata/test_gol.p8.png');
+    const golPng = fixture('test_gol.p8.png');
     fileSystem.writeFileSync(namesFile, 'x\n');
     let plain, kept;
     return Promise.all([

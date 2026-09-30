@@ -82,6 +82,11 @@ function calls(source) {
   return found;
 }
 
+// Expose the existing require-call scan for focused parity tests. The result
+// retains JS token objects and fields; it does not promise the Python
+// RequireWalker class or AST traversal interface.
+function findRequireCalls(source) { return calls(source); }
+
 function removeGameLoops(source) {
   const tokens = significant(Buffer.from(source, 'latin1'));
   const lines = source.split('\n');
@@ -126,6 +131,17 @@ function removeGameLoops(source) {
   return result + source.slice(cursor);
 }
 
+function locateRequireFile(moduleName, filename, { files = {}, luaPath } = {}) {
+  for (const pattern of (luaPath ?? '?;?.lua').split(';')) {
+    const candidate = pattern.replace('?', moduleName);
+    const resolved = path.isAbsolute(candidate) ? path.normalize(candidate)
+      : path.normalize(path.join(path.dirname(filename), candidate));
+    const key = resolved.replace(/^\//, '');
+    if (Object.prototype.hasOwnProperty.call(files, key)) return key;
+  }
+  return null;
+}
+
 function bundleRequiredLua(source, { filename = 'main.lua', files = {}, luaPath } = {}) {
   const main = typeof source === 'string' ? encodeP8scii(source) : Buffer.from(source);
   validateLua(main);
@@ -136,21 +152,14 @@ function bundleRequiredLua(source, { filename = 'main.lua', files = {}, luaPath 
         throw new LuaBuildError('require() filename cannot contain "./" or "../" or start with "/"', call.token);
       }
       if (modules.has(call.path)) continue;
-      let selected = null;
-      for (const pattern of (luaPath ?? '?;?.lua').split(';')) {
-        const candidate = pattern.replace('?', call.path);
-        const resolved = path.isAbsolute(candidate) ? path.normalize(candidate)
-          : path.normalize(path.join(path.dirname(currentFile), candidate));
-        const key = resolved.replace(/^\//, '');
-        if (Object.prototype.hasOwnProperty.call(files, key)) { selected = key; break; }
-      }
+      const selected = locateRequireFile(call.path, currentFile, { files, luaPath });
       if (selected === null) {
         throw new LuaBuildError(`require() file ${call.path} not found; used load path ${luaPath ?? 'None'}`, call.token);
       }
       const value = files[selected];
       const moduleBytes = typeof value === 'string' ? encodeP8scii(value) : Buffer.from(value);
       validateLua(moduleBytes);
-      let moduleCode = echoLua(moduleBytes).toString('latin1');
+      let moduleCode = Buffer.from(echoLua(moduleBytes)).toString('latin1');
       if (!call.useGameLoop && [...GAME_LOOP_NAMES].some((name) => moduleCode.includes(`function ${name}`))) {
         moduleCode = removeGameLoops(moduleCode);
       }
@@ -164,9 +173,9 @@ function bundleRequiredLua(source, { filename = 'main.lua', files = {}, luaPath 
   for (const [modulePath, moduleCode] of modules) {
     output += `package._c["${modulePath.replace(/"/g, '\\"')}"]=function()\n${moduleCode}end\n`;
   }
-  output += REQUIRE_FUNCTION + echoLua(main).toString('latin1');
+  output += REQUIRE_FUNCTION + Buffer.from(echoLua(main)).toString('latin1');
   validateLua(Buffer.from(output, 'latin1'));
   return Buffer.from(output, 'latin1');
 }
 
-module.exports = Object.freeze({ bundleRequiredLua, LuaBuildError });
+module.exports = Object.freeze({ bundleRequiredLua, locateRequireFile, findRequireCalls, LuaBuildError });

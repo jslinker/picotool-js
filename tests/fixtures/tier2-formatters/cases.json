@@ -1,0 +1,163 @@
+[
+  {
+    "id": "tests.pico8.lua.lua_test.TestLuaFormatterWriter.testNormalizesSpaceCharacters",
+    "writer": "ast",
+    "source": "a\t=\tb\r\n",
+    "expected": "a = b\n",
+    "indentwidth": 2
+  },
+  {
+    "id": "tests.pico8.lua.lua_test.TestLuaFormatterWriter.testTrailingWhitespace",
+    "writer": "ast",
+    "source": "a = b   \nc = d   \n",
+    "expected": "a = b\nc = d\n",
+    "indentwidth": 2
+  },
+  {
+    "id": "tests.pico8.lua.lua_test.TestLuaFormatterWriter.testCommentAtEndOfLine",
+    "writer": "ast",
+    "source": "a = b     -- comment\nc = d\n",
+    "expected": "a = b  -- comment\nc = d\n",
+    "indentwidth": 2
+  },
+  {
+    "id": "tests.pico8.lua.lua_test.TestLuaFormatterWriter.testCommentOnOwnLine",
+    "writer": "ast",
+    "source": "a = b\n    -- comment\nc = d\n",
+    "expected": "a = b\n-- comment\nc = d\n",
+    "indentwidth": 2
+  },
+  {
+    "id": "tests.pico8.lua.lua_test.TestLuaFormatterWriter.testIndentZero",
+    "writer": "ast",
+    "source": "\n  a = b\n        c = d\n",
+    "expected": "\na = b\nc = d\n",
+    "indentwidth": 2
+  },
+  {
+    "id": "tests.pico8.lua.lua_test.TestLuaFormatterWriter.testIndentBlock",
+    "writer": "ast",
+    "source": "\na = 1\ndo\nb = 2\n    c = 3\nend\n d = 4\n\nwhile foo do\n e = 5\n  end\nrepeat\n  f = 6\n g = 7\n    h = 8\nuntil foo\n\nif foo then\n i = 9\n  elseif bar then\n   j = 10\n    else\n     k = 11\n      end\n\nfor x=1,10,2 do\n      l = 12\n       m = 13\nend\nfor x in foo do\n        n = 14\n         o = 15\nend\n",
+    "expected": "\na = 1\ndo\n  b = 2\n  c = 3\nend\nd = 4\n\nwhile foo do\n  e = 5\nend\nrepeat\n  f = 6\n  g = 7\n  h = 8\nuntil foo\n\nif foo then\n  i = 9\nelseif bar then\n  j = 10\nelse\n  k = 11\nend\n\nfor x=1,10,2 do\n  l = 12\n  m = 13\nend\nfor x in foo do\n  n = 14\n  o = 15\nend\n",
+    "indentwidth": 2
+  },
+  {
+    "id": "tests.pico8.lua.lua_test.TestLuaFormatterWriter.testIndentMulti",
+    "writer": "ast",
+    "source": "\ndo\na = 1\nwhile foo do\nb = 2\nif bar then\nc = 3\nelseif baz then\nd = 4\nrepeat\ne = 5\nuntil bing\nelse\nf = 6\nend\nend\ng = 7\nend\nh = 8\n",
+    "expected": "\ndo\n  a = 1\n  while foo do\n    b = 2\n    if bar then\n      c = 3\n    elseif baz then\n      d = 4\n      repeat\n        e = 5\n      until bing\n    else\n      f = 6\n    end\n  end\n  g = 7\nend\nh = 8\n",
+    "indentwidth": 2
+  },
+  {
+    "id": "tests.pico8.lua.lua_test.TestLuaFormatterWriter.testIndentCommentsAndStatements",
+    "writer": "ast",
+    "source": "\n x += 1    -- increment x\ndo\n-- do stuff in here\n print \"stuff happens\"\nx -= 1      -- decrement x\nend\n -- END\n",
+    "expected": "\nx += 1  -- increment x\ndo\n  -- do stuff in here\n  print \"stuff happens\"\n  x -= 1  -- decrement x\nend\n-- END\n",
+    "indentwidth": 2
+  },
+  {
+    "id": "tests.pico8.lua.lua_test.TestLuaFormatterWriter.testIndentTableConstructor",
+    "writer": "ast",
+    "source": "\nobj = {\nfoo=function(arg)\n a = 1\n  b = 2\n   c = 3\n    end,\n     bar=function(arg, arg, arg)\n      d = 4\n       e = 5\n        end,\n         baz=999\n          }\n",
+    "expected": "\nobj = {\n  foo=function(arg)\n    a = 1\n    b = 2\n    c = 3\n  end,\n  bar=function(arg, arg, arg)\n    d = 4\n    e = 5\n  end,\n  baz=999\n}\n",
+    "indentwidth": 2
+  },
+  {
+    "id": "tests.pico8.lua.lua_test.TestLuaFormatterWriter.testTooManyNewlines",
+    "writer": "ast",
+    "source": "\n\n\n a = 1\n\n\n\n\n  b = 2\n\n\n   c = 3\n",
+    "expected": "\n\na = 1\n\nb = 2\n\nc = 3\n",
+    "indentwidth": 2
+  },
+  {
+    "id": "tests.pico8.lua.lua_test.TestLuaFormatterWriter.testAcceptsIndentWidthArg",
+    "writer": "ast",
+    "source": "\ndo\na = 1\nwhile foo do\nb = 2\nif bar then\nc = 3\nelseif baz then\nd = 4\nrepeat\ne = 5\nuntil bing\nelse\nf = 6\nend\nend\ng = 7\nend\nh = 8\n",
+    "expected": "\ndo\n   a = 1\n   while foo do\n      b = 2\n      if bar then\n         c = 3\n      elseif baz then\n         d = 4\n         repeat\n            e = 5\n         until bing\n      else\n         f = 6\n      end\n   end\n   g = 7\nend\nh = 8\n",
+    "indentwidth": 3
+  },
+  {
+    "id": "tests.pico8.lua.lua_test.TestLuaFormatterTokenWriter.testNormalizesSpaceCharacters",
+    "writer": "token",
+    "source": "a\t=\tb\r\n",
+    "expected": "a = b\n",
+    "indentwidth": 2
+  },
+  {
+    "id": "tests.pico8.lua.lua_test.TestLuaFormatterTokenWriter.testTrailingWhitespace",
+    "writer": "token",
+    "source": "a = b   \nc = d   \n",
+    "expected": "a = b\nc = d\n",
+    "indentwidth": 2
+  },
+  {
+    "id": "tests.pico8.lua.lua_test.TestLuaFormatterTokenWriter.testCommentAtEndOfLine",
+    "writer": "token",
+    "source": "a = b     -- comment\nc = d\n",
+    "expected": "a = b  -- comment\nc = d\n",
+    "indentwidth": 2
+  },
+  {
+    "id": "tests.pico8.lua.lua_test.TestLuaFormatterTokenWriter.testCommentOnOwnLine",
+    "writer": "token",
+    "source": "a = b\n    -- comment\nc = d\n",
+    "expected": "a = b\n-- comment\nc = d\n",
+    "indentwidth": 2
+  },
+  {
+    "id": "tests.pico8.lua.lua_test.TestLuaFormatterTokenWriter.testIndentZero",
+    "writer": "token",
+    "source": "\n  a = b\n        c = d\n",
+    "expected": "\na = b\nc = d\n",
+    "indentwidth": 2
+  },
+  {
+    "id": "tests.pico8.lua.lua_test.TestLuaFormatterTokenWriter.testIndentBlock",
+    "writer": "token",
+    "source": "\na = 1\ndo\nb = 2\n    c = 3\nend\n d = 4\n\nwhile foo do\n e = 5\n  end\nrepeat\n  f = 6\n g = 7\n    h = 8\nuntil foo\n\nif foo then\n i = 9\n  elseif bar then\n   j = 10\n    else\n     k = 11\n      end\n\nfor x=1,10,2 do\n      l = 12\n       m = 13\nend\nfor x in foo do\n        n = 14\n         o = 15\nend\n",
+    "expected": "\na = 1\ndo\n  b = 2\n  c = 3\nend\nd = 4\n\nwhile foo do\n  e = 5\nend\nrepeat\n  f = 6\n  g = 7\n  h = 8\nuntil foo\n\nif foo then\n  i = 9\nelseif bar then\n  j = 10\nelse\n  k = 11\nend\n\nfor x = 1, 10, 2 do\n  l = 12\n  m = 13\nend\nfor x in foo do\n  n = 14\n  o = 15\nend\n",
+    "indentwidth": 2
+  },
+  {
+    "id": "tests.pico8.lua.lua_test.TestLuaFormatterTokenWriter.testIndentMulti",
+    "writer": "token",
+    "source": "\ndo\na = 1\nwhile foo do\nb = 2\nif bar then\nc = 3\nelseif baz then\nd = 4\nrepeat\ne = 5\nuntil bing\nelse\nf = 6\nend\nend\ng = 7\nend\nh = 8\n",
+    "expected": "\ndo\n  a = 1\n  while foo do\n    b = 2\n    if bar then\n      c = 3\n    elseif baz then\n      d = 4\n      repeat\n        e = 5\n      until bing\n    else\n      f = 6\n    end\n  end\n  g = 7\nend\nh = 8\n",
+    "indentwidth": 2
+  },
+  {
+    "id": "tests.pico8.lua.lua_test.TestLuaFormatterTokenWriter.testIndentCommentsAndStatements",
+    "writer": "token",
+    "source": "\n x += 1    -- increment x\ndo\n-- do stuff in here\n print \"stuff happens\"\nx -= 1      -- decrement x\nend\n -- END\n",
+    "expected": "\nx += 1  -- increment x\ndo\n  -- do stuff in here\n  print \"stuff happens\"\n  x -= 1  -- decrement x\nend\n-- END\n",
+    "indentwidth": 2
+  },
+  {
+    "id": "tests.pico8.lua.lua_test.TestLuaFormatterTokenWriter.testIndentTableConstructor",
+    "writer": "token",
+    "source": "\nobj = {\nfoo=function(arg)\n a = 1\n  b = 2\n   c = 3\n    end,\n     bar=function(arg, arg, arg)\n      d = 4\n       e = 5\n        end,\n         baz=999\n          }\n",
+    "expected": "\nobj = {\n  foo = function(arg)\n    a = 1\n    b = 2\n    c = 3\n  end,\n  bar = function(arg, arg, arg)\n    d = 4\n    e = 5\n  end,\n  baz = 999\n}\n",
+    "indentwidth": 2
+  },
+  {
+    "id": "tests.pico8.lua.lua_test.TestLuaFormatterTokenWriter.testTooManyNewlines",
+    "writer": "token",
+    "source": "\n\n\n a = 1\n\n\n\n\n  b = 2\n\n\n   c = 3\n",
+    "expected": "\n\na = 1\n\nb = 2\n\nc = 3\n",
+    "indentwidth": 2
+  },
+  {
+    "id": "tests.pico8.lua.lua_test.TestLuaFormatterTokenWriter.testAcceptsIndentWidthArg",
+    "writer": "token",
+    "source": "\ndo\na = 1\nwhile foo do\nb = 2\nif bar then\nc = 3\nelseif baz then\nd = 4\nrepeat\ne = 5\nuntil bing\nelse\nf = 6\nend\nend\ng = 7\nend\nh = 8\n",
+    "expected": "\ndo\n   a = 1\n   while foo do\n      b = 2\n      if bar then\n         c = 3\n      elseif baz then\n         d = 4\n         repeat\n            e = 5\n         until bing\n      else\n         f = 6\n      end\n   end\n   g = 7\nend\nh = 8\n",
+    "indentwidth": 3
+  },
+  {
+    "id": "tests.pico8.lua.lua_test.TestLuaFormatterTokenWriter.testEliminateSpaceAroundSomePunctuation",
+    "writer": "token",
+    "source": "a  =   {   \"x\" ,  y,  -3, 4+5*6}",
+    "expected": "a = {\"x\", y, - 3, 4 + 5 * 6}\n",
+    "indentwidth": 2
+  }
+]

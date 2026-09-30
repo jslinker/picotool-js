@@ -1,0 +1,52 @@
+{
+  "schema": "picotool-js/coverage-inventory/1",
+  "upstream": {
+    "project": "dansanderson/picotool",
+    "revision": "49808e5ddb21e886a5608a19c95ec3ca6f1ee541",
+    "publicApiSymbolCount": 132,
+    "publicApiSymbols": ["AstParser","BaseASTWalker","BaseSection","CODE_END","CODE_OFFSET","Chunk","DEFAULT_VERSION","ExpBinOp","ExpList","ExpUnOp","ExpValue","FieldExp","FieldExpKey","FieldNamedKey","Function","FunctionArgs","FunctionBody","FunctionCall","FunctionCallMethod","FunctionName","GFF","Game","Gff","Gfx","HEADER","LexerError","LuaAstError","LuaBuildError","LuaNode","LuaSource","MapSection","Music","NameList","Node","P8Error","P8IncludeNotFound","P8IncludeOutsideOfAllowedDirectory","REPORT_SCHEMA","SECTION_NAMES","Sfx","StatAssignment","StatBreak","StatDo","StatForIn","StatForStep","StatFunction","StatFunctionCall","StatGoto","StatIf","StatLabel","StatLocalAssignment","StatLocalFunction","StatRepeat","StatReturn","StatWhile","TOKEN_CLASSES","TRANSPARENT","TableConstructor","TokComment","TokKeyword","TokLabel","TokName","TokNewline","TokNumber","TokSpace","TokString","TokSymbol","Token","UnrecognizedFileType","VERSION_OFFSET","VarAttribute","VarIndex","VarList","VarName","VarargDots","analyzeLua","buildP8","bundleRequiredLua","bytesToHex","cartridgeCompressedSize","cartridgeStats","compressCode","createToken","decodeP8scii","decodePng","decompressCode","echoLua","echoLuaAst","encodeP8scii","encodePng","encodeUtf8","findLua","fnv1a32","formatForFilename","formatLuaAst","formatLuaTokens","fromBytes","fromFile","getBytesFromCode","getCodeFromBytes","getPicodataFromRgba","getRgbaFromPicodata","hexToBytes","listLua","listTokens","makeEmptyCartridge","minifyLua","minifyLuaAst","normalizedResult","parseLua","parseLuaAst","parseP8","parseP8PngPicodata","printAst","printNode","processP8Includes","processP8IncludesAsync","pureLua","pythonBytesRepr","readP8Png","serializeP8PngPicodata","snapshotDomainP8","snapshotP8","snapshotP8PngPicodata","toBytes","toFile","tokenizeLua","writeCartData","writeP8","writeP8Png","writeP8PngFromP8","writeP8WithDiagnostics"],
+    "testMethodCounts": {
+      "tests/pico8/lua/parser_test.py": 99,
+      "tests/pico8/lua/lexer_test.py": 46,
+      "tests/pico8/lua/lua_test.py": 42,
+      "tests/pico8/lua/count_test.py": 2,
+      "tests/pico8/game/game_test.py": 38,
+      "tests/pico8/build/build_test.py": 30,
+      "tests/pico8/gfx/gfx_test.py": 13,
+      "tests/pico8/gff/gff_test.py": 4,
+      "tests/pico8/map/map_test.py": 8,
+      "tests/pico8/sfx/sfx_test.py": 10,
+      "tests/pico8/music/music_test.py": 6,
+      "tests/pico8/util_test.py": 10
+    },
+    "testFiles": ["tests/pico8/build/build_test.py","tests/pico8/game/game_test.py","tests/pico8/gff/gff_test.py","tests/pico8/gfx/gfx_test.py","tests/pico8/lua/count_test.py","tests/pico8/lua/lexer_test.py","tests/pico8/lua/lua_test.py","tests/pico8/lua/parser_test.py","tests/pico8/map/map_test.py","tests/pico8/music/music_test.py","tests/pico8/sfx/sfx_test.py","tests/pico8/util_test.py"],
+    "testMethodNameHashes": {
+      "tests/pico8/lua/parser_test.py":"a46af17f6ad7dfdedb677e23d5f571d668956407d17ec7db7cfa76a36321e0c8",
+      "tests/pico8/lua/lexer_test.py":"ee26767d034d1d29b013e59e324717b62f2df14d3648434705580c02d3ff53e5",
+      "tests/pico8/lua/lua_test.py":"9bb374c96525b79e98c50d67346ccf900f7718c832c160cf629e18949d7a6cac",
+      "tests/pico8/lua/count_test.py":"dffd1e968a4602566951893919faaa40621ea3914b45cfca10997ed13a33271f",
+      "tests/pico8/game/game_test.py":"276e622174bc5411490a999158ed5b08e56313595e17c05a0207692b3142d6f8",
+      "tests/pico8/build/build_test.py":"f2435020c5a3e0a4dcbbedd85a17da1e09a3838cb8999a2db1637556d2797239",
+      "tests/pico8/gfx/gfx_test.py":"a1affc3fbbb6a63fe32066a67929cfd9b8b232b77b82861aeec576e88c68f414",
+      "tests/pico8/gff/gff_test.py":"c083e4265595c70f525398ceb44362465f77e10046d161f86216ee6563ddd40d",
+      "tests/pico8/map/map_test.py":"c5ebb87a08c32c8ace1ce4e0a34b941ea71b681fdecf65a55d321b8774fb074c",
+      "tests/pico8/sfx/sfx_test.py":"787d53b11fdcc47b6c0527a3aff17334392861813a0535b40f5a804798feaecd",
+      "tests/pico8/music/music_test.py":"96eed936a4842acfa34c323d3e9cbeb3f530cdedfb90a4ce75d6861f67f4b98e",
+      "tests/pico8/util_test.py":"2ebc371646ce123d5ebd771e9a0b1e0c7c3fb4e7290ff711d01ec43bdb1fc289"
+    }
+  },
+  "entries": [
+    {"id":"lua-lexer","upstream":"pico8/lua/lexer.py","implementation":"src/lua-lexer.js","tests":["tools/token-model-test.cjs","tools/ast-oracle-test.cjs","tools/coverage-differential-test.cjs"],"status":"covered"},
+    {"id":"lua-parser-ast","upstream":"pico8/lua/parser.py","implementation":"src/lua-ast-model.js","tests":["tools/ast-model-test.cjs","tools/ast-oracle-test.cjs","tools/coverage-differential-test.cjs"],"status":"covered"},
+    {"id":"lua-parser-validation","upstream":"pico8/lua/parser.py:validate","implementation":"src/lua-parser.js","tests":["tools/cli-test.cjs","tools/coverage-differential-test.cjs"],"status":"covered"},
+    {"id":"lua-writers","upstream":"pico8/lua/lua.py:LuaWriter","implementation":"src/p8writer.js;src/lua-ast-writers.js","tests":["tools/check-parity.cjs","tools/coverage-differential-test.cjs"],"status":"covered"},
+    {"id":"cartridge-text","upstream":"pico8/game/formatter/p8.py","implementation":"src/picotool.js;src/sections.js","tests":["tools/check-parity.cjs","tools/png-edge-test.cjs"],"status":"covered"},
+    {"id":"cartridge-png","upstream":"pico8/game/formatter/p8png.py","implementation":"src/p8png.js;src/png-transport.js","tests":["tools/png-edge-test.cjs","tools/check-parity.cjs"],"status":"covered"},
+    {"id":"domains","upstream":"pico8/game/{gfx,gff,map,sfx,music}.py","implementation":"src/sections.js","tests":["tools/check-parity.cjs","tools/generated-domain-test.cjs","browser/domain-tests.js"],"status":"covered"},
+    {"id":"build-and-includes","upstream":"pico8/build/build.py","implementation":"src/build.js;src/includes.js;src/require-build.js","tests":["tools/check-parity.cjs","tools/cli-test.cjs"],"status":"covered"},
+    {"id":"cli","upstream":"pico8/tool.py","implementation":"src/cli.js;tools/p8tool.cjs","tests":["tools/cli-test.cjs"],"status":"covered"},
+    {"id":"file-api","upstream":"pico8/game/game.py","implementation":"src/file-api.js;src/game.js","tests":["tools/file-api-test.cjs"],"status":"partial","notes":"LuaSource retained tree/reparse and metadata accessors remain incomplete."},
+    {"id":"browser-entry","upstream":"package/browser mapping","implementation":"src/browser.js","tests":["browser/tests.js","browser/fixture-tests.js"],"status":"partial","notes":"Browser safe export and real browser bundle gate are pending."},
+    {"id":"rom-and-token-optimization","upstream":"pico8/game/formatter/rom.py;--optimize_tokens","implementation":"","tests":["tools/unimplemented-test.cjs"],"status":"excluded","notes":"Intentional documented exclusions."}
+  ]
+}

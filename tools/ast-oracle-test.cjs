@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { parseLua } = require('../src/lua-ast-model');
 const astExports = require('../src/lua-ast-model');
+const { fixturesRoot, picotoolRoot, python, pythonEnv } = require('./test-env.cjs');
 
 const classOraclePy = String.raw`import json
 from pico8.lua import parser
@@ -13,7 +14,7 @@ for name,cls in vars(parser).items():
   if isinstance(cls,type) and issubclass(cls,parser.Node) and cls is not parser.Node and name==cls.__name__:
     result[name]={'name':cls._name,'fields':list(cls._fields),'children':cls._children}
 print(json.dumps(result))`;
-const classResult = cp.spawnSync('python3', ['-c', classOraclePy], { env: { ...process.env, PYTHONPATH: '../../vendor/picotool' } });
+const classResult = cp.spawnSync(python, ['-c', classOraclePy], { env: pythonEnv });
 assert.equal(classResult.status, 0, classResult.stderr.toString());
 const pythonClasses = JSON.parse(classResult.stdout.toString());
 const javascriptClasses = {};
@@ -48,7 +49,7 @@ def out(x):
 print(json.dumps(out(p.root)))`;
 
 function oracle(source) {
-  const r = cp.spawnSync('python3', ['-c', py], { input: Buffer.from(source), env: { ...process.env, PYTHONPATH: '../../vendor/picotool' } });
+  const r = cp.spawnSync(python, ['-c', py], { input: Buffer.from(source), env: pythonEnv });
   assert.equal(r.status, 0, r.stderr.toString()); return JSON.parse(r.stdout.toString());
 }
 const tokenOraclePy = String.raw`import json,sys
@@ -56,7 +57,7 @@ from pico8.lua import lexer,parser
 s=sys.stdin.buffer.read(); l=lexer.Lexer(4); l.process_lines([s]); p=parser.Parser(4); p.process_tokens(l.tokens)
 print(json.dumps([{'class':type(t).__name__,'code':t.code.decode('latin1'),'line':t._lineno,'char':t._charno} for t in p.root.tokens]))`;
 function oracleTokens(source) {
-  const result = cp.spawnSync('python3', ['-c', tokenOraclePy], { input: Buffer.from(source, 'latin1'), env: { ...process.env, PYTHONPATH: '../../vendor/picotool' } });
+  const result = cp.spawnSync(python, ['-c', tokenOraclePy], { input: Buffer.from(source, 'latin1'), env: pythonEnv });
   assert.equal(result.status, 0, result.stderr.toString());
   return JSON.parse(result.stdout.toString());
 }
@@ -76,7 +77,7 @@ def shape(x):
   return None
 print(json.dumps(shape(p.root)))`;
 function oracleGroups(source) {
-  const result = cp.spawnSync('python3', ['-c', groupOraclePy], { input: Buffer.from(source, 'latin1'), env: { ...process.env, PYTHONPATH: '../../vendor/picotool' } });
+  const result = cp.spawnSync(python, ['-c', groupOraclePy], { input: Buffer.from(source, 'latin1'), env: pythonEnv });
   assert.equal(result.status, 0, result.stderr.toString());
   return JSON.parse(result.stdout.toString());
 }
@@ -177,7 +178,7 @@ assert.ok(namedTree.stats[0].funcbody instanceof require('../src/lua-ast-model')
 // Parse every upstream text-cart Lua section.  These include shorthand-if
 // syntax (notably test_cart_memdump.p8), which is a useful regression corpus
 // beyond the small hand-written examples above.
-const fixtureDir = path.join(process.cwd(), '../../vendor/picotool/tests/testdata');
+const fixtureDir = fixturesRoot;
 const fixtureAstMismatches = [];
 for (const file of fs.readdirSync(fixtureDir).filter(name => name.endsWith('.p8'))) {
   const text = fs.readFileSync(path.join(fixtureDir, file), 'latin1');
@@ -204,9 +205,9 @@ assert.equal(fixtureAstMismatches.length, 0, 'upstream text-cart Python AST mism
 // Broader vendored parser corpus: mirror python_oracle.parser_corpus() by
 // extracting every deduplicated get_parser(bytes) source and retaining only
 // sources accepted by the upstream parser.
-const corpusPy = String.raw`import ast,base64,json,pathlib
+const corpusPy = String.raw`import ast,base64,json,pathlib,sys
 from pico8.lua import lexer,parser
-p=pathlib.Path('../../vendor/picotool/tests/pico8/lua/parser_test.py'); t=ast.parse(p.read_text()); seen=set(); out=[]
+p=pathlib.Path(sys.argv[1]); t=ast.parse(p.read_text()); seen=set(); out=[]
 for n in ast.walk(t):
   if not isinstance(n,ast.Call) or not isinstance(n.func,ast.Name) or n.func.id!='get_parser' or not n.args: continue
   try: s=ast.literal_eval(n.args[0])
@@ -216,7 +217,7 @@ for n in ast.walk(t):
   try: q.process_tokens(l.tokens); out.append([base64.b64encode(s).decode(),True,q.root.end_pos,len(l.tokens)])
   except Exception: out.append([base64.b64encode(s).decode(),False,None,len(l.tokens)])
 print(json.dumps(out))`;
-const corpusResult = cp.spawnSync('python3', ['-c', corpusPy], { cwd: process.cwd(), env: { ...process.env, PYTHONPATH: '../../vendor/picotool' } });
+const corpusResult = cp.spawnSync(python, ['-c', corpusPy, path.join(picotoolRoot, 'tests', 'pico8', 'lua', 'parser_test.py')], { cwd: process.cwd(), env: pythonEnv });
 assert.equal(corpusResult.status, 0, corpusResult.stderr.toString());
 const parserCorpus = JSON.parse(corpusResult.stdout.toString());
 let corpusAccepted = 0, corpusFullPrograms = 0, corpusFragments = 0, corpusExact = 0, corpusMismatched = 0, corpusJsFailures = 0; const corpusMismatchDetails = [], corpusFailureDetails = [];

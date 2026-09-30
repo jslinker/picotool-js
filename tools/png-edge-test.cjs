@@ -2,6 +2,7 @@
 
 const assert = require('node:assert/strict');
 const api = require('../src');
+const { fixture } = require('./test-env.cjs');
 
 async function testTransportRejectsNonRgba() {
   const { encode } = await import('fast-png');
@@ -18,15 +19,13 @@ async function main() {
   await testTransportRejectsNonRgba();
   const { encode } = await import('fast-png');
   const { readFileSync } = require('node:fs');
-  const { resolve } = require('node:path');
-  const fixture = readFileSync(resolve(__dirname,
-    '../../../vendor/picotool/tests/testdata/test_cart.p8.png'));
-  const image = await api.decodePng(fixture);
+  const fixtureBytes = readFileSync(fixture('test_cart.p8.png'));
+  const image = await api.decodePng(fixtureBytes);
   const interlaced = encode({ width: image.width, height: image.height,
     data: image.rgba, depth: 8, channels: 4, interlace: 'Adam7' });
   const decoded = await api.readP8Png(interlaced);
   assert.equal(decoded.cartridge.version,
-    (await api.readP8Png(fixture)).cartridge.version);
+    (await api.readP8Png(fixtureBytes)).cartridge.version);
   assert.deepEqual(decoded.rgba, image.rgba);
   const rewritten = await api.writeP8Png(decoded.cartridge, interlaced,
     decoded.cartridge.code.code.slice(0, decoded.cartridge.code.codeLength));

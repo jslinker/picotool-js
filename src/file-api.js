@@ -42,8 +42,9 @@ async function fromFile(filename) {
 
 function p8FromCartridge(cartridge) {
   const storedCode = cartridge.code?.code ?? new Uint8Array();
-  const luaBytes = cartridge.code?.codeLength == null ? storedCode : storedCode.slice(0, cartridge.code.codeLength);
-  const lua = base.decodeP8scii(luaBytes);
+  // Decoded uncompressed PNG code includes Python's appended newline, which
+  // is part of the Lua source even though codeLength counts only stored bytes.
+  const lua = base.decodeP8scii(storedCode);
   const sections = Object.freeze({
     lua: Object.freeze(lua.match(/[^\n]*\n|[^\n]+$/g) || []),
     gfx: Object.freeze(cartridge.gfx.toLines()),

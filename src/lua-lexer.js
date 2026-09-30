@@ -1,6 +1,7 @@
 'use strict';
 
 const tokensApi = require('./lua-token');
+const { fromLatin1, toLatin1 } = require('./byte-utils');
 
 const KEYWORDS = new Set('and break do else elseif end false for function goto if in local nil not or repeat return then true until while'.split(' '));
 const EXEMPT_SYMBOLS = new Set([':', '.', ')', ']', '}']);
@@ -23,6 +24,8 @@ class LexerError extends SyntaxError {
   constructor(message, line, column) {
     super(`${message} at line ${line} char ${column}`);
     this.name = 'LexerError';
+    this.lineno = line;
+    this.charno = column;
   }
 }
 
@@ -49,8 +52,8 @@ function canonicalQuotedCode(code, start, end) {
 }
 
 function scanLua(source, filename) {
-  const bytes = Buffer.from(source);
-  const code = bytes.toString('latin1');
+  const bytes = typeof source === 'string' ? new TextEncoder().encode(source) : source;
+  const code = toLatin1(bytes);
   let tokenCount = 0;
   let characterCount = 0;
   let index = 0;
@@ -141,7 +144,7 @@ function analyzeLua(source, filename) {
   return { characterCount, tokenCount, warnings };
 }
 
-function echoLua(source) { return Buffer.from(scanLua(source).echo, 'latin1'); }
+function echoLua(source) { return fromLatin1(scanLua(source).echo); }
 function tokenizeLua(source) { return scanLua(source).tokens; }
 
 module.exports = Object.freeze({ analyzeLua, echoLua, tokenizeLua, LexerError, ...tokensApi });

@@ -1,16 +1,17 @@
 'use strict';
+const { toLatin1, fromLatin1 } = require('./byte-utils');
 
 const TYPE_NAMES = Object.freeze({ space: 'whitespace', newline: 'newline', comment: 'comment',
   string: 'string literal', number: 'number', name: 'name', label: 'label', keyword: 'keyword', symbol: 'symbol' });
 
 function asString(value) {
   if (typeof value === 'string') return value;
-  if (value instanceof Uint8Array || Buffer.isBuffer(value)) return Buffer.from(value).toString('latin1');
+  if (value instanceof Uint8Array) return toLatin1(value);
   return String(value);
 }
 
 function pythonBytesRepr(value) {
-  const bytes = Buffer.from(asString(value), 'latin1');
+  const bytes = fromLatin1(asString(value));
   const quote = bytes.includes(39) && !bytes.includes(34) ? '"' : "'";
   let escaped = '';
   for (const byte of bytes) {
