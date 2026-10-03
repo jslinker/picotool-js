@@ -1,5 +1,7 @@
 'use strict';
 
+const { bytesFrom, latin1Bytes, latin1Text } = require('./bytes');
+
 const tokensApi = require('./lua-token');
 
 const KEYWORDS = new Set('and break do else elseif end false for function goto if in local nil not or repeat return then true until while'.split(' '));
@@ -49,8 +51,8 @@ function canonicalQuotedCode(code, start, end) {
 }
 
 function scanLua(source, filename) {
-  const bytes = Buffer.from(source);
-  const code = bytes.toString('latin1');
+  const bytes = bytesFrom(source);
+  const code = latin1Text(bytes);
   let tokenCount = 0;
   let characterCount = 0;
   let index = 0;
@@ -141,7 +143,7 @@ function analyzeLua(source, filename) {
   return { characterCount, tokenCount, warnings };
 }
 
-function echoLua(source) { return Buffer.from(scanLua(source).echo, 'latin1'); }
+function echoLua(source) { return latin1Bytes(scanLua(source).echo); }
 function tokenizeLua(source) { return scanLua(source).tokens; }
 
 module.exports = Object.freeze({ analyzeLua, echoLua, tokenizeLua, LexerError, ...tokensApi });

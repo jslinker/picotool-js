@@ -1,6 +1,7 @@
 'use strict';
 
 const base = { ...require('./picotool'), ...require('./sections'), ...require('./p8png') };
+const { latin1Bytes } = require('./bytes');
 const { analyzeLua, tokenizeLua, echoLua } = require('./lua-lexer');
 const { validateLua } = require('./lua-parser');
 
@@ -11,7 +12,7 @@ function cartridgeStats(source) {
   validateLua(lua);
   const tokens = tokenizeLua(lua);
   const comment = (index) => tokens[index]?.type === 'comment'
-    ? Buffer.from(tokens[index].code.slice(2).replace(/^[\x09-\x0d\x20]+|[\x09-\x0d\x20]+$/g, ''), 'latin1') : null;
+    ? latin1Bytes(tokens[index].code.slice(2).replace(/^[\x09-\x0d\x20]+|[\x09-\x0d\x20]+$/g, '')) : null;
   return {
     title: comment(0), byline: comment(2), version: parsed.version,
     characterCount: diagnostics.characterCount, tokenCount: diagnostics.tokenCount,

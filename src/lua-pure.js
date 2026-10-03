@@ -1,11 +1,12 @@
 'use strict';
 
 const { encodeP8scii } = require('./picotool');
+const { bytesFrom, latin1Bytes } = require('./bytes');
 const { tokenizeLua } = require('./lua-lexer');
 const { validateLua } = require('./lua-parser');
 
 function pureLua(source) {
-  const bytes = typeof source === 'string' ? encodeP8scii(source) : Buffer.from(source);
+  const bytes = typeof source === 'string' ? encodeP8scii(source) : bytesFrom(source);
   validateLua(bytes);
   const output = [];
   let line = [];
@@ -60,7 +61,7 @@ function pureLua(source) {
     if (token.type === 'newline') { output.push(emit(line)); line = []; }
   }
   if (line.length) output.push(emit(line));
-  return Buffer.from(output.join(''), 'latin1');
+  return latin1Bytes(output.join(''));
 }
 
 module.exports = Object.freeze({ pureLua });

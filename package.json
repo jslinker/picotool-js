@@ -14,7 +14,9 @@
   ],
   "license": "MIT",
   "scripts": {
-    "test": "node tools/file-api-test.cjs && node tools/token-model-test.cjs && node tools/cli-test.cjs && node tools/png-edge-test.cjs && node tools/lua-find-test.cjs && node tools/unimplemented-test.cjs && node tools/ast-walker-test.cjs && node tools/ast-walker-oracle-test.cjs && node tools/ast-model-test.cjs && node tools/ast-oracle-test.cjs && node tools/check-parity.cjs",
+    "test": "node tools/ast-cartridge-test.cjs && node tools/file-api-test.cjs && node tools/browser-commands-test.cjs && node tools/token-model-test.cjs && node tools/cli-test.cjs && node tools/png-edge-test.cjs && node tools/lua-find-test.cjs && node tools/unimplemented-test.cjs && node tools/ast-walker-test.cjs && node tools/ast-walker-oracle-test.cjs && node tools/ast-model-test.cjs && node tools/ast-oracle-test.cjs && node tools/check-parity.cjs",
+    "test:ast-cartridge": "node tools/ast-cartridge-test.cjs",
+    "test:browser-commands": "node tools/browser-commands-test.cjs",
     "test:file-api": "node tools/file-api-test.cjs",
     "test:cli": "node tools/cli-test.cjs",
     "test:png-edge": "node tools/png-edge-test.cjs",

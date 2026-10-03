@@ -1,11 +1,12 @@
 'use strict';
 
 const { encodeP8scii } = require('./picotool');
+const { bytesFrom, latin1Bytes } = require('./bytes');
 const { tokenizeLua } = require('./lua-lexer');
 const { validateLua } = require('./lua-parser');
 
 function formatLuaTokens(source, { indentwidth = 2 } = {}) {
-  const bytes = typeof source === 'string' ? encodeP8scii(source) : Buffer.from(source);
+  const bytes = typeof source === 'string' ? encodeP8scii(source) : bytesFrom(source);
   validateLua(bytes);
   const tokens = tokenizeLua(bytes);
   let indentLevel = 0;
@@ -34,7 +35,7 @@ function formatLuaTokens(source, { indentwidth = 2 } = {}) {
     if (keyword(token, 'function')) inFunction = true;
     if (symbol(token, '(', '{', '[') || keyword(token, 'do', 'repeat', 'then', 'else')) indentLevel += 1;
   }
-  return Buffer.from(`${output}\n`, 'latin1');
+  return latin1Bytes(`${output}\n`);
 }
 
 module.exports = Object.freeze({ formatLuaTokens });

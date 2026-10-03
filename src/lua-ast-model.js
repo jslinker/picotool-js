@@ -1,5 +1,7 @@
 'use strict';
 
+const { latin1Text } = require('./bytes');
+
 // Python-shaped Lua/PICO-8 AST nodes for callers that need the parsed structure.
 // The parser skips trivia while recognizing grammar, then stores token groups
 // on nodes so whitespace and comments survive token traversal and mutation.
@@ -93,14 +95,14 @@ const PYTHON_FIELDS = {
   Chunk: { body: 'stats' }, AssignmentStatement: { targets: 'varlist', operator: 'assignop', values: 'explist' },
   CallStatement: { expression: 'functioncall' }, DoStatement: { body: 'block' }, WhileStatement: { condition: 'exp', body: 'block' },
   RepeatStatement: { body: 'block', condition: 'exp' }, ReturnStatement: { values: 'explist' },
-  LocalAssignmentStatement: { names: 'namelist', values: 'explist' }, LocalFunctionStatement: { name: 'funcname' }, ExpUnOp: { operator: 'unop', argument: 'exp' }, ForNumericStatement: { name: 'name', start: 'exp_init', finish: 'exp_end', step: 'exp_step', body: 'block' },
+  LocalAssignmentStatement: { names: 'namelist', values: 'explist' }, ExpUnOp: { operator: 'unop', argument: 'exp' }, ForNumericStatement: { name: 'name', start: 'exp_init', finish: 'exp_end', step: 'exp_step', body: 'block' },
   ForInStatement: { names: 'namelist', values: 'explist', body: 'block' }, FunctionStatement: { name: 'funcname', body: 'funcbody' },
   LocalFunctionStatement: { name: 'funcname', body: 'funcbody' }, BinaryExpression: { left: 'exp1', operator: 'binop', right: 'exp2' }, UnaryExpression: { operator: 'unop', argument: 'exp' },
   NameExpression: { name: 'name' }, NumberLiteral: { value: 'value' }, StringLiteral: { value: 'value' }, TableExpression: { fields: 'fields' }, Function: { body: 'funcbody' }, FunctionExpression: { body: 'funcbody' }, CallExpression: { callee: 'exp_prefix' },
   IndexExpression: { object: 'exp_prefix', index: 'exp_index' }, MemberExpression: { object: 'exp_prefix', name: 'attr_name' },
   LabelStatement: { name: 'label' },
 };
-const PYTHON_NAMES = { AssignmentStatement: 'StatAssignment', CallStatement: 'StatFunctionCall', DoStatement: 'StatDo', WhileStatement: 'StatWhile', RepeatStatement: 'StatRepeat', IfStatement: 'StatIf', CallStatement: 'StatFunctionCall', BreakStatement: 'StatBreak', ReturnStatement: 'StatReturn', GotoStatement: 'StatGoto', LabelStatement: 'StatLabel', ForNumericStatement: 'StatForStep', ForInStatement: 'StatForIn', FunctionStatement: 'StatFunction', LocalFunctionStatement: 'StatLocalFunction', LocalAssignmentStatement: 'StatLocalAssignment', BinaryExpression: 'ExpBinOp', UnaryExpression: 'ExpUnOp', NameExpression: 'VarName', NumberLiteral: 'ExpValue', StringLiteral: 'ExpValue', TableExpression: 'TableConstructor', CallExpression: 'FunctionCall', FunctionExpression: 'Function', IndexExpression: 'VarIndex', MemberExpression: 'VarAttribute', Chunk: 'Chunk' };
+const PYTHON_NAMES = { AssignmentStatement: 'StatAssignment', CallStatement: 'StatFunctionCall', DoStatement: 'StatDo', WhileStatement: 'StatWhile', RepeatStatement: 'StatRepeat', IfStatement: 'StatIf', BreakStatement: 'StatBreak', ReturnStatement: 'StatReturn', GotoStatement: 'StatGoto', LabelStatement: 'StatLabel', ForNumericStatement: 'StatForStep', ForInStatement: 'StatForIn', FunctionStatement: 'StatFunction', LocalFunctionStatement: 'StatLocalFunction', LocalAssignmentStatement: 'StatLocalAssignment', BinaryExpression: 'ExpBinOp', UnaryExpression: 'ExpUnOp', NameExpression: 'VarName', NumberLiteral: 'ExpValue', StringLiteral: 'ExpValue', TableExpression: 'TableConstructor', CallExpression: 'FunctionCall', FunctionExpression: 'Function', IndexExpression: 'VarIndex', MemberExpression: 'VarAttribute', Chunk: 'Chunk' };
 const node = (type, fields, first, last, source) => {
   const mapped = {}; const renames = PYTHON_FIELDS[type] || {};
   for (const [key, value] of Object.entries(fields)) mapped[renames[key] || key] = value;
@@ -113,7 +115,7 @@ const node = (type, fields, first, last, source) => {
   if (type === 'ReturnStatement') { const ef = fields.values[0], el = fields.values.at(-1); mapped.explist = fields.values.length ? wrapNode('ExpList', { exps: fields.values }, tokenFromNode(ef, source), tokenFromNode(el, source, true), source) : null; if (mapped.explist) mapped.explist._start_token_pos = (first.actualTokenPos ?? first.tokenPos) + 1; if (mapped.explist && ef?.type === 'VarargDots') ef._start_token_pos -= 1; }
   if (type === 'CallExpression' && fields.method !== undefined) { mapped.methodname = mapped.method; delete mapped.method; }
   if (type === 'CallExpression' && mapped.args?.type === 'ExpList') { const inner = mapped.args; const wrapperFirst = tokenFromNode(inner, source); inner._start_token_pos += 1; const closePos = inner._end_token_pos; inner._end_token_pos -= 1; mapped.args = wrapNode('FunctionArgs', { explist: inner }, wrapperFirst, tokenFromNode(inner, source, true), source); mapped.args._end_token_pos = closePos; inner.exps.forEach((v, i) => { mapped.args[i] = v?.decoded !== undefined ? { value: v.decoded } : v; }); Object.defineProperty(mapped.args, 'length', { value: inner.exps.length, enumerable: false }); }
-  if (type === 'CallExpression' && mapped.args === null) mapped.args = wrapNode('FunctionArgs', { explist: null }, first ? { ...first, tokenPos: first.tokenPos + 1 } : first, last, source);
+  if (type === 'CallExpression' && mapped.args === null) mapped.args = wrapNode('FunctionArgs', { explist: null }, first ? { ...first, code: first.code, tokenPos: first.tokenPos + 1 } : first, last, source);
   if (type === 'ForInStatement') { mapped.namelist = wrapNode('NameList', { names: fields.names }, first, last, source); mapped.explist = wrapNode('ExpList', { exps: fields.values }, first, last, source); }
   const pythonType = type === 'CallExpression' && fields.method !== undefined ? 'FunctionCallMethod' : (PYTHON_NAMES[type] || type);
   const n = new Node(pythonType, mapped, first, last, source); n.type = pythonType;
@@ -184,12 +186,17 @@ function point(token, source, end = false) {
 
 class AstParser {
   constructor(source) {
-    this.source = typeof source === 'string' ? source : Buffer.from(source).toString('latin1');
+    this.source = typeof source === 'string' ? source : latin1Text(source);
     // Python's parser reports positions in its complete token stream (trivia
     // included).  Keep the parser convenient by skipping trivia, but retain
     // the original token position on every significant token.
     const allTokens = tokenizeLua(this.source);
     this.allTokens = allTokens;
+    const lineOffsets = [0];
+    for (let index = 0; index < this.source.length; index++) {
+      if (this.source[index] === '\n') lineOffsets.push(index + 1);
+    }
+    for (const token of allTokens) token.sourceOffset = lineOffsets[token.line] + token.column;
     this.tokens = allTokens.filter((t, pos) => {
       if (['space', 'newline', 'comment'].includes(t.type)) return false;
       t.tokenPos = pos;
@@ -225,8 +232,8 @@ class AstParser {
   }
   statement() {
     let first = this.peek(); const prior = this.tokens[this.i - 1];
-    if (first && !prior && first.tokenPos > 0) first = { ...first, actualTokenPos: first.tokenPos, tokenPos: 0 };
-    else if (first && prior && first.tokenPos - prior.tokenPos > 1) first = { ...first, actualTokenPos: first.tokenPos, tokenPos: prior.tokenPos + 1 };
+    if (first && !prior && first.tokenPos > 0) first = { ...first, code: first.code, actualTokenPos: first.tokenPos, tokenPos: 0 };
+    else if (first && prior && first.tokenPos - prior.tokenPos > 1) first = { ...first, code: first.code, actualTokenPos: first.tokenPos, tokenPos: prior.tokenPos + 1 };
     if (this.keyword('return')) return node('ReturnStatement', { values: this.peek() && !this.at('symbol', ';') && !this.at('keyword', 'end') && !this.at('keyword', 'else') && !this.at('keyword', 'elseif') ? this.explist() : [] }, first, this.tokens[this.i - 1], this.source);
     if (this.keyword('break')) return node('BreakStatement', {}, first, this.tokens[this.i - 1], this.source);
     if (this.keyword('goto')) { const label = this.expect('name'); return node('GotoStatement', { label: label.code }, first, label, this.source); }
@@ -252,7 +259,7 @@ class AstParser {
     return statement;
   }
   block(until) {
-    let first = this.peek(); const before = this.tokens[this.i - 1]; if (first && before && first.tokenPos - before.tokenPos > 1) first = { ...first, tokenPos: before.tokenPos + 1 }; const body = [];
+    let first = this.peek(); const before = this.tokens[this.i - 1]; if (first && before && first.tokenPos - before.tokenPos > 1) first = { ...first, code: first.code, tokenPos: before.tokenPos + 1 }; const body = [];
     while (this.peek() && !this.at('keyword', until) && !this.at('keyword', 'elseif') && !this.at('keyword', 'else')) {
       if (this.symbol(';')) continue; body.push(this.statement());
     }
@@ -270,14 +277,14 @@ class AstParser {
     const gotThen = this.keyword('then'); const gotDo = !gotThen && this.keyword('do');
     if (!gotThen && !gotDo) {
       const shortBody = this.statement();
-      const body = node('Chunk', { body: [shortBody] }, { ...this.tokens[this.i - 1], tokenPos: Math.max(0, this.tokens[this.i - 1].tokenPos - 1) }, this.tokens[this.i - 1], this.source);
+      const body = node('Chunk', { body: [shortBody] }, { ...this.tokens[this.i - 1], code: this.tokens[this.i - 1].code, tokenPos: Math.max(0, this.tokens[this.i - 1].tokenPos - 1) }, this.tokens[this.i - 1], this.source);
       Object.defineProperty(body, 'body', { value: body.stats, enumerable: false });
       pairs.push([condition, body]);
       const elseToken = this.keyword('else');
       if (elseToken) {
         const sameLine = this.peek() && this.peek().line === elseToken.line;
         const elseStat = sameLine ? this.statement() : null;
-        if (elseStat) { const elseBody = node('Chunk', { body: [elseStat] }, { ...this.tokens[this.i - 1], tokenPos: Math.max(0, this.tokens[this.i - 1].tokenPos - 1) }, this.tokens[this.i - 1], this.source); Object.defineProperty(elseBody, 'body', { value: elseBody.stats, enumerable: false }); pairs.push([null, elseBody]); }
+        if (elseStat) { const elseBody = node('Chunk', { body: [elseStat] }, { ...this.tokens[this.i - 1], code: this.tokens[this.i - 1].code, tokenPos: Math.max(0, this.tokens[this.i - 1].tokenPos - 1) }, this.tokens[this.i - 1], this.source); Object.defineProperty(elseBody, 'body', { value: elseBody.stats, enumerable: false }); pairs.push([null, elseBody]); }
       }
       const result = node('IfStatement', { exp_block_pairs: pairs }, first, this.tokens[this.i - 1], this.source);
       Object.defineProperty(result, 'clauses', { value: pairs.filter(p => p[0]).map(p => wrapNode('IfClause', { condition: p[0], body: p[1] }, first, this.tokens[this.i - 1], this.source)), enumerable: false });
@@ -320,7 +327,7 @@ class AstParser {
   explist() { const values = [this.expression()]; while (this.symbol(',')) values.push(this.expression()); return values; }
   expression(min = 0) {
     let left = this.prefix();
-    const binops = new Set(['or', 'and', '==', '~=', '!=', '<', '>', '<=', '>=', '|', '^^', '&', '<<', '>>', '..', '+', '-', '*', '/', '%', '^']);
+    const binops = new Set(['or', 'and', '==', '~=', '!=', '<', '>', '<=', '>=', '|', '^^', '&', '<<', '>>', '>>>', '<<>', '>><', '..', '+', '-', '*', '/', '\\', '%', '^']);
     while (this.peek() && (this.at('symbol') || this.at('keyword')) && binops.has(this.peek().code)) {
       const opToken = this.take(this.peek().type);
       const right = this.prefix();
@@ -341,8 +348,8 @@ class AstParser {
     const wrapped = value; let hadSuffix = false; if (value.type === 'ExpValue' && value.value instanceof Node) value = value.value;
     while (true) { if (this.symbol('[')) { hadSuffix = true; const index = this.expression(); const end = this.expect('symbol', ']'); value = node('IndexExpression', { object: value, index }, first, end, this.source); } else if (this.symbol('.')) { hadSuffix = true; const name = this.expect('name'); value = node('MemberExpression', { object: value, name }, first, name, this.source); } else if (this.symbol(':')) { hadSuffix = true; const method = this.expect('name'); const args = this.arguments(); value = node('CallExpression', { callee: value, method, args }, first, this.tokens[this.i - 1], this.source); } else if (this.at('symbol', '(') || this.at('string') || this.at('symbol', '{')) { hadSuffix = true; const args = this.arguments(); value = node('CallExpression', { callee: value, args }, first, this.tokens[this.i - 1], this.source); } else break; }
     if (!hadSuffix) value = wrapped;
-    else if (['CallExpression', 'FunctionCall'].includes(value.type)) { value._start_token_pos += 1; const startPos = preceding && first.tokenPos - preceding.tokenPos > 1 ? preceding.tokenPos + 1 : first.tokenPos; value = node('ExpValue', { value }, { ...first, tokenPos: startPos }, this.tokens[this.i - 1], this.source); }
-    else { const startPos = preceding && first.tokenPos - preceding.tokenPos > 1 ? preceding.tokenPos + 1 : first.tokenPos; value = node('ExpValue', { value }, { ...first, tokenPos: startPos }, this.tokens[this.i - 1], this.source); }
+    else if (['CallExpression', 'FunctionCall'].includes(value.type)) { value._start_token_pos += 1; const startPos = preceding && first.tokenPos - preceding.tokenPos > 1 ? preceding.tokenPos + 1 : first.tokenPos; value = node('ExpValue', { value }, { ...first, code: first.code, tokenPos: startPos }, this.tokens[this.i - 1], this.source); }
+    else { const startPos = preceding && first.tokenPos - preceding.tokenPos > 1 ? preceding.tokenPos + 1 : first.tokenPos; value = node('ExpValue', { value }, { ...first, code: first.code, tokenPos: startPos }, this.tokens[this.i - 1], this.source); }
     return value;
   }
   arguments() {
@@ -350,20 +357,21 @@ class AstParser {
     if (this.at('symbol', '{')) { const first = this.take('symbol', '{'); return node('TableConstructor', { fields: this.table(first).fields }, first, this.tokens[this.i - 1], this.source); }
     const t = this.take('string'); return node('StringLiteral', { value: t.code, decoded: t.value }, t, t, this.source);
   }
-  table(first) { const prior = this.tokens[this.i - 2]; const fields = []; while (!this.at('symbol', '}')) { let key = null, value, explicit = false, fieldStart = this.peek(); if (this.symbol('[')) { explicit = true; fieldStart = { ...this.tokens[this.i - 1], tokenPos: this.tokens[this.i - 1].tokenPos - 1 }; key = this.expression(); this.expect('symbol', ']'); this.expect('symbol', '='); value = this.expression(); } else { const f = this.expression(); fieldStart = tokenFromNode(f, this.source); value = f; if (this.symbol('=')) { key = f; value = this.expression(); } } const fieldType = key == null ? 'FieldExp' : (explicit ? 'FieldExpKey' : 'FieldNamedKey'); const fieldFields = key == null ? { exp: value } : (explicit ? { key_exp: key, exp: value } : { key_name: key?.value?.name ?? key?.name, exp: value }); fields.push(node(fieldType, fieldFields, fieldStart, this.tokens[this.i - 1], this.source)); if (!this.symbol(',') && !this.symbol(';')) break; } const end = this.expect('symbol', '}'); const result = node('TableExpression', { fields }, first, end, this.source); if (prior && first.tokenPos - prior.tokenPos > 1) result._start_token_pos = prior.tokenPos + 1; return result; }
+  table(first) { const prior = this.tokens[this.i - 2]; const fields = []; while (!this.at('symbol', '}')) { let key = null, value, explicit = false, fieldStart = this.peek(); if (this.symbol('[')) { explicit = true; fieldStart = { ...this.tokens[this.i - 1], code: this.tokens[this.i - 1].code, tokenPos: this.tokens[this.i - 1].tokenPos - 1 }; key = this.expression(); this.expect('symbol', ']'); this.expect('symbol', '='); value = this.expression(); } else { const f = this.expression(); fieldStart = tokenFromNode(f, this.source); value = f; if (this.symbol('=')) { key = f; value = this.expression(); } } const fieldType = key == null ? 'FieldExp' : (explicit ? 'FieldExpKey' : 'FieldNamedKey'); const fieldFields = key == null ? { exp: value } : (explicit ? { key_exp: key, exp: value } : { key_name: key?.value?.name ?? key?.name, exp: value }); fields.push(node(fieldType, fieldFields, fieldStart, this.tokens[this.i - 1], this.source)); if (!this.symbol(',') && !this.symbol(';')) break; } const end = this.expect('symbol', '}'); const result = node('TableExpression', { fields }, first, end, this.source); if (prior && first.tokenPos - prior.tokenPos > 1) result._start_token_pos = prior.tokenPos + 1; return result; }
 }
 
 function parseLua(source) { return new AstParser(source).parse(); }
 
 function tokenAtOffset(tokens, offset, source) {
-  let candidate = tokens[0];
-  const lines = String(source).split(/\n/);
-  for (const token of tokens) {
-    let point = token.column;
-    for (let i = 0; i < token.line; i++) point += lines[i].length + 1;
-    if (point <= offset) candidate = token;
+  // Tokens are ordered by source position; avoid rescanning every preceding
+  // line for every token on each AST range lookup (costly on full cartridges).
+  let low = 0, high = tokens.length - 1;
+  while (low <= high) {
+    const middle = (low + high) >>> 1;
+    if (tokens[middle].sourceOffset <= offset) low = middle + 1;
+    else high = middle - 1;
   }
-  return candidate;
+  return tokens[Math.max(0, high)];
 }
 
 const PYTHON_NODE_TYPES = ['Chunk', 'StatAssignment', 'StatFunctionCall', 'StatDo', 'StatWhile', 'StatRepeat', 'StatIf', 'StatForStep', 'StatForIn', 'StatFunction', 'StatLocalFunction', 'StatLocalAssignment', 'StatGoto', 'StatLabel', 'StatBreak', 'StatReturn', 'FunctionName', 'FunctionArgs', 'VarList', 'VarName', 'VarIndex', 'VarAttribute', 'NameList', 'ExpList', 'ExpValue', 'VarargDots', 'ExpBinOp', 'ExpUnOp', 'FunctionCall', 'FunctionCallMethod', 'Function', 'FunctionBody', 'TableConstructor', 'FieldExp', 'FieldExpKey', 'FieldNamedKey'];

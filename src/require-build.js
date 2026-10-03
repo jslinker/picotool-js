@@ -1,7 +1,8 @@
 'use strict';
 
-const path = require('node:path');
+const path = require('./portable-path');
 const { encodeP8scii } = require('./picotool');
+const { bytesFrom, latin1Bytes, latin1Text } = require('./bytes');
 const { tokenizeLua, echoLua } = require('./lua-lexer');
 const { validateLua } = require('./lua-parser');
 
@@ -83,7 +84,7 @@ function calls(source) {
 }
 
 function removeGameLoops(source) {
-  const tokens = significant(Buffer.from(source, 'latin1'));
+  const tokens = significant(latin1Bytes(source));
   const lines = source.split('\n');
   const offsets = [0];
   for (let i = 0; i < lines.length - 1; i += 1) offsets.push(offsets.at(-1) + lines[i].length + 1);
@@ -127,7 +128,7 @@ function removeGameLoops(source) {
 }
 
 function bundleRequiredLua(source, { filename = 'main.lua', files = {}, luaPath } = {}) {
-  const main = typeof source === 'string' ? encodeP8scii(source) : Buffer.from(source);
+  const main = typeof source === 'string' ? encodeP8scii(source) : bytesFrom(source);
   validateLua(main);
   const modules = new Map();
   function visit(bytes, currentFile) {
@@ -148,9 +149,9 @@ function bundleRequiredLua(source, { filename = 'main.lua', files = {}, luaPath 
         throw new LuaBuildError(`require() file ${call.path} not found; used load path ${luaPath ?? 'None'}`, call.token);
       }
       const value = files[selected];
-      const moduleBytes = typeof value === 'string' ? encodeP8scii(value) : Buffer.from(value);
+      const moduleBytes = typeof value === 'string' ? encodeP8scii(value) : bytesFrom(value);
       validateLua(moduleBytes);
-      let moduleCode = echoLua(moduleBytes).toString('latin1');
+      let moduleCode = latin1Text(echoLua(moduleBytes));
       if (!call.useGameLoop && [...GAME_LOOP_NAMES].some((name) => moduleCode.includes(`function ${name}`))) {
         moduleCode = removeGameLoops(moduleCode);
       }
@@ -164,9 +165,9 @@ function bundleRequiredLua(source, { filename = 'main.lua', files = {}, luaPath 
   for (const [modulePath, moduleCode] of modules) {
     output += `package._c["${modulePath.replace(/"/g, '\\"')}"]=function()\n${moduleCode}end\n`;
   }
-  output += REQUIRE_FUNCTION + echoLua(main).toString('latin1');
-  validateLua(Buffer.from(output, 'latin1'));
-  return Buffer.from(output, 'latin1');
+  output += REQUIRE_FUNCTION + latin1Text(echoLua(main));
+  validateLua(latin1Bytes(output));
+  return latin1Bytes(output);
 }
 
 module.exports = Object.freeze({ bundleRequiredLua, LuaBuildError });

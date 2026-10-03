@@ -380,7 +380,7 @@ function runPrintAst(args, io = {}) {
       if (!filename.endsWith('.p8')) throw new Error('filename must end in .p8 or .p8.png');
       const source = p8LuaSource((io.readFile || fs.readFileSync)(filename));
       if (args.filename.length > 1) write(`=== ${filename} ===\n`);
-      write(printAst(source));
+      write(printAst(require('./picotool').encodeP8scii(source)));
     } catch (exception) { failed = true; error(`${filename}: ${exception.message}\n${filename}: could not load cart\n`); }
   }
   return failed && args.filename.length === 1 ? 1 : 0;
@@ -401,7 +401,7 @@ async function asyncPrintAst(args, io = {}) {
         source = require('./game').Game.fromCartridge(cartridge, filename).lua.toLines().join('');
       } else throw new Error('filename must end in .p8 or .p8.png');
       if (args.filename.length > 1) write(`=== ${filename} ===\n`);
-      write(printAst(source));
+      write(printAst(require('./picotool').encodeP8scii(source)));
     } catch (exception) { failed = true; error(`${filename}: ${exception.message}\n${filename}: could not load cart\n`); }
   }
   return failed && args.filename.length === 1 ? 1 : 0;

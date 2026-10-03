@@ -1,22 +1,23 @@
 'use strict';
 
 const base = require('./picotool');
+const { latin1Bytes, latin1Text } = require('./bytes');
 const { echoLua, tokenizeLua } = require('./lua-lexer');
 const { pureLua } = require('./lua-pure');
 
 function friendly(bytes) {
-  return Buffer.from(bytes).toString('latin1').replace(/[\x80-\xff]/g, '_');
+  return latin1Text(bytes).replace(/[\x80-\xff]/g, '_');
 }
 
 function lines(bytes) {
-  return Buffer.from(bytes).toString('latin1').match(/[^\n]*\n|[^\n]+$/g) || [];
+  return latin1Text(bytes).match(/[^\n]*\n|[^\n]+$/g) || [];
 }
 
 function listLua(source, { pure = false, showLineNumbers = false } = {}) {
   const parsed = source?.format === 'p8' ? source : base.parseP8(source);
   const lua = base.encodeP8scii((parsed.sections.lua || []).join(''));
   const output = pure ? pureLua(lua) : echoLua(lua);
-  return lines(output).map((line, index) => `${showLineNumbers ? `${index}: ` : ''}${friendly(Buffer.from(line, 'latin1'))}`).join('') + '\n';
+  return lines(output).map((line, index) => `${showLineNumbers ? `${index}: ` : ''}${friendly(latin1Bytes(line))}`).join('') + '\n';
 }
 
 function pythonFloat(value) {
@@ -41,7 +42,7 @@ function stringValue(value) {
 }
 
 function pythonBytesRepr(value) {
-  const bytes = Buffer.from(value, 'latin1');
+  const bytes = latin1Bytes(value);
   const hasSingle = bytes.includes(39), hasDouble = bytes.includes(34);
   const quote = hasSingle && !hasDouble ? '"' : "'";
   let output = 'b' + quote;

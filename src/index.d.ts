@@ -86,6 +86,8 @@ export class UnrecognizedFileType extends P8Error {
 }
 export function formatForFilename(filename: string): 'p8' | 'p8.png' | 'rom';
 export function fromBytes(input: Uint8Array | ArrayBuffer, filename: string): Promise<ParsedP8 | any>;
+export function p8FromCartridge(cartridge: any): ParsedP8;
+export function emptyLabelPng(): Promise<Uint8Array>;
 export function fromFile(filename: string): Promise<ParsedP8 | any>;
 export interface CartridgeFileOptions extends P8WriterOptions {
   labelPng?: Uint8Array | ArrayBuffer;
@@ -224,6 +226,73 @@ export function parseLua(source: string | Uint8Array): Chunk;
 export function parseLuaAst(source: string | Uint8Array): Chunk;
 export function printAst(source: string | Uint8Array): string;
 export function printNode(value: unknown, indent?: number, prefix?: string, output?: string[]): string[];
+export interface NamedByteFile {
+  name: string;
+  bytes?: Uint8Array | ArrayBuffer;
+  data?: string | Uint8Array | ArrayBuffer;
+  arrayBuffer?: () => Promise<ArrayBuffer>;
+}
+export interface BrowserCommandError {
+  name: string;
+  code: string;
+  message: string;
+}
+export interface BrowserCommandResult<T = unknown> {
+  ok: boolean;
+  implemented: true;
+  command: string;
+  results: T[];
+  errors: BrowserCommandError[];
+  csv?: string;
+}
+export interface BrowserCommandRequest {
+  cartridges?: NamedByteFile[];
+  /** stats: emit the CLI-compatible CSV representation. */
+  csv?: boolean;
+  /** listlua: enable --pure-lua or --show-line-numbers. */
+  pureLua?: boolean;
+  showLineNumbers?: boolean;
+  /** luafind: CLI's first positional pattern. */
+  pattern?: string | RegExp;
+  listFiles?: boolean;
+  /** luafmt: --indentwidth and --overwrite. Overwrite preserves a .p8 input name. */
+  indentwidth?: number;
+  overwrite?: boolean;
+  /** luamin and build: --keep-all-names / --keep-names-from-file contents. */
+  keepAllNames?: boolean;
+  keepNames?: string[];
+  /** Original bytes of the --keep-names-from-file input, interpreted as Latin-1. */
+  keepNamesBytes?: Uint8Array | ArrayBuffer;
+  keepNamesText?: string;
+  /** build positional output filename and optional existing/base cartridge. */
+  outputName?: string;
+  base?: NamedByteFile;
+  existing?: NamedByteFile;
+  sources?: Partial<Record<BuildDomainName, NamedByteFile>>;
+  empty?: BuildDomainName[];
+  modules?: NamedByteFile[];
+  luaPath?: string;
+  luaMode?: 'unchanged' | 'minify' | 'format';
+  luaMinify?: boolean;
+  luaFormat?: boolean;
+  /** Preserves the CLI's explicit NotImplementedError for raw Lua sources. */
+  optimizeTokens?: boolean;
+  suffix?: string;
+}
+export interface BrowserCommands {
+  stats(request?: BrowserCommandRequest): Promise<BrowserCommandResult>;
+  listlua(request?: BrowserCommandRequest): Promise<BrowserCommandResult>;
+  listrawlua(request?: BrowserCommandRequest): Promise<BrowserCommandResult>;
+  listtokens(request?: BrowserCommandRequest): Promise<BrowserCommandResult>;
+  printast(request?: BrowserCommandRequest): Promise<BrowserCommandResult>;
+  luafind(request?: BrowserCommandRequest): Promise<BrowserCommandResult>;
+  writep8(request?: BrowserCommandRequest): Promise<BrowserCommandResult>;
+  luamin(request?: BrowserCommandRequest): Promise<BrowserCommandResult>;
+  luafmt(request?: BrowserCommandRequest): Promise<BrowserCommandResult>;
+  build(request?: BrowserCommandRequest): Promise<BrowserCommandResult>;
+}
+export function createBrowserCommands(): BrowserCommands;
+export function statsCsv(rows: Array<Record<string, unknown>>): string;
 export class BaseASTWalker {
   constructor(tokens: Token[], root: any, args?: Record<string, unknown>);
   protected _tokens: Token[];

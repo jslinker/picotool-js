@@ -16,11 +16,13 @@ const listing = require('./listing');
 const pngTransport = require('./png-transport');
 const cartridge = require('./cartridge');
 const fileApi = require('./file-api');
+const cartridgeIo = require('./cartridge-io');
 const game = require('./game');
 const lexer = require('./lua-lexer');
 const find = require('./lua-find');
 const walker = require('./lua-ast-walker');
 const astModel = require('./lua-ast-model');
 const astPrint = require('./ast-print');
+const browserCommands = require('./browser-commands');
 
-module.exports = Object.freeze({ ...base, ...sections, ...p8png, ...p8writer, ...build, ...includes, ...minify, ...formatToken, ...requireBuild, ...astWriters, ...pure, ...stats, ...listing, ...pngTransport, ...cartridge, ...fileApi, ...game, ...lexer, ...find, ...walker, ...astModel, ...astPrint });
+module.exports = Object.freeze({ ...base, ...sections, ...p8png, ...p8writer, ...build, ...includes, ...minify, ...formatToken, ...requireBuild, ...astWriters, ...pure, ...stats, ...listing, ...pngTransport, ...cartridge, ...cartridgeIo, ...fileApi, ...game, ...lexer, ...find, ...walker, ...astModel, ...astPrint, ...browserCommands });

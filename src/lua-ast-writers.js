@@ -1,13 +1,14 @@
 'use strict';
 
 const { encodeP8scii } = require('./picotool');
+const { bytesFrom, latin1Bytes } = require('./bytes');
 const { tokenizeLua, echoLua } = require('./lua-lexer');
 const { validateLua } = require('./lua-parser');
 const BUILTINS = require('./lua-builtins');
 
 const KEYWORDS = new Set('and break do else elseif end false for function goto if in local nil not or repeat return then true until while'.split(' '));
 const PRESERVED = new Set([...KEYWORDS, ...BUILTINS]);
-const asBytes = (source) => typeof source === 'string' ? encodeP8scii(source) : Buffer.from(source);
+const asBytes = (source) => typeof source === 'string' ? encodeP8scii(source) : bytesFrom(source);
 
 function checkAstInput(bytes) {
   if (bytes.length && bytes.at(-1) !== 10) {
@@ -54,7 +55,7 @@ function minifyLuaAst(source) {
     output += token.type === 'name' ? shortName(token.code)
       : token.type === 'label' ? `::${shortName(token.code.slice(2, -2))}::` : token.code;
   }
-  return Buffer.from(output.trimEnd(), 'latin1');
+  return latin1Bytes(output.trimEnd());
 }
 
 function formatLuaAst(source, { indentwidth = 2 } = {}) {
@@ -89,7 +90,7 @@ function formatLuaAst(source, { indentwidth = 2 } = {}) {
   output += spacing.replace(/\t/g, ' ').replace(/\r\n|\n\r|\r/g, '\n').replace(/ +\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n').replace(/[ \n]+$/, '\n');
   if (!output.endsWith('\n')) output += '\n';
-  return Buffer.from(output, 'latin1');
+  return latin1Bytes(output);
 }
 
 module.exports = Object.freeze({ echoLuaAst, minifyLuaAst, formatLuaAst });
